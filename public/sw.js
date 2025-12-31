@@ -19,6 +19,19 @@ self.addEventListener('install', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+  // Handle navigation requests (page refreshes) for SPA routing
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          // If network fails, try to serve index.html from cache
+          return caches.match('/index.html');
+        })
+    );
+    return;
+  }
+
+  // For other requests, use cache-first strategy
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

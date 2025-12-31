@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { ScoreDisplay } from '@/components/ScoreDisplay';
 import { SoundToggle } from '@/components/SoundToggle';
 import { ParentSettings } from '@/components/ParentSettings';
-import { AgeGate } from '@/components/AgeGate';
 import { FeedbackDisplay } from '@/components/FeedbackDisplay';
 import { ShapeDisplay } from '@/components/ShapeDisplay';
 import { useShapeGameLogic } from '@/hooks/useShapeGameLogic';
@@ -12,8 +12,8 @@ import { getAgeFromStorage, saveAgeToStorage } from '@/lib/ageUtils';
 import { AgeRange, Shape } from '@/types/game';
 
 const ShapeGame: React.FC = () => {
+  const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
-  const [showAgeGate, setShowAgeGate] = useState(false);
   const [childAge, setChildAge] = useState<AgeRange | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<number | Shape | null>(null);
   const [customImages, setCustomImages] = useState<{ correct: string | null; wrong: string | null }>({
@@ -25,11 +25,17 @@ const ShapeGame: React.FC = () => {
   useEffect(() => {
     const storedAge = getAgeFromStorage();
     if (storedAge) {
+      if (storedAge >= 7) {
+        // Wrong game for this age, redirect to math game
+        navigate('/game/math', { replace: true });
+        return;
+      }
       setChildAge(storedAge);
     } else {
-      setShowAgeGate(true);
+      // No age set, redirect to home
+      navigate('/', { replace: true });
     }
-  }, []);
+  }, [navigate]);
 
   const {
     score,
@@ -90,16 +96,6 @@ const ShapeGame: React.FC = () => {
     setCustomImages(prev => ({ ...prev, [type]: image }));
   }, []);
 
-  const handleAgeSelected = useCallback((age: number) => {
-    const ageRange = age as AgeRange;
-    setChildAge(ageRange);
-    saveAgeToStorage(ageRange);
-    setShowAgeGate(false);
-    if (updateAge) {
-      updateAge(ageRange);
-    }
-  }, [updateAge]);
-
   const handleAgeChange = useCallback((age: number) => {
     const ageRange = age as AgeRange;
     setChildAge(ageRange);
@@ -107,15 +103,16 @@ const ShapeGame: React.FC = () => {
     if (updateAge) {
       updateAge(ageRange);
     }
-  }, [updateAge]);
+    // Navigate to appropriate game based on new age
+    if (ageRange >= 7) {
+      navigate('/game/math', { replace: true });
+    } else {
+      navigate('/game/shape', { replace: true });
+    }
+  }, [updateAge, navigate]);
 
   // Don't render game if age is not set
-  if (!childAge || showAgeGate) {
-    return <AgeGate onAgeSelected={handleAgeSelected} />;
-  }
-
-  // Shape game is only for ages 3-6
-  if (childAge >= 7) {
+  if (!childAge) {
     return null;
   }
 

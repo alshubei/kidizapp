@@ -11,7 +11,7 @@ import { useShapeGameLogic } from '@/hooks/useShapeGameLogic';
 import { useSpeech } from '@/hooks/useSpeech';
 import { getAgeFromStorage, saveAgeToStorage } from '@/lib/ageUtils';
 import { loadAllCustomAssets } from '@/lib/assetStorage';
-import { getShapeDescription } from '@/lib/shapeGameUtils';
+import { getShapeDescription, getShapeNamePlural } from '@/lib/shapeGameUtils';
 import { AgeRange, Shape } from '@/types/game';
 
 const ShapeGame: React.FC = () => {
@@ -86,8 +86,15 @@ const ShapeGame: React.FC = () => {
     
     // If there's a shape in the question, add its description
     if (currentChallenge.questionShape) {
-      const shapeDescription = getShapeDescription(currentChallenge.questionShape);
-      questionText += ' ' + shapeDescription;
+      // For count questions, use plural shape name without color
+      // For other questions, use full description with color
+      if (currentChallenge.type === 'count') {
+        const shapeNamePlural = getShapeNamePlural(currentChallenge.questionShape.type);
+        questionText += ' ' + shapeNamePlural;
+      } else {
+        const shapeDescription = getShapeDescription(currentChallenge.questionShape);
+        questionText += ' ' + shapeDescription;
+      }
     }
     
     // Add suffix if present
@@ -199,13 +206,14 @@ const ShapeGame: React.FC = () => {
             <div className="flex items-center justify-center gap-3 mb-4">
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
                 <span>{currentChallenge.question}</span>
-                {currentChallenge.questionShape && (
-                  <InlineShape 
-                    type={currentChallenge.questionShape.type} 
-                    color={currentChallenge.questionShape.color}
-                    size={60}
-                  />
-                )}
+              {currentChallenge.questionShape && (
+                <InlineShape 
+                  type={currentChallenge.questionShape.type} 
+                  color={currentChallenge.questionShape.color}
+                  size={60}
+                  usePlural={currentChallenge.type === 'count'}
+                />
+              )}
                 {currentChallenge.questionSuffix && (
                   <span>{currentChallenge.questionSuffix}</span>
                 )}
@@ -264,13 +272,14 @@ const ShapeGame: React.FC = () => {
             <div className="flex items-center justify-center gap-3 mb-4">
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
                 <span>{currentChallenge.question}</span>
-                {currentChallenge.questionShape && (
-                  <InlineShape 
-                    type={currentChallenge.questionShape.type} 
-                    color={currentChallenge.questionShape.color}
-                    size={60}
-                  />
-                )}
+              {currentChallenge.questionShape && (
+                <InlineShape 
+                  type={currentChallenge.questionShape.type} 
+                  color={currentChallenge.questionShape.color}
+                  size={60}
+                  usePlural={currentChallenge.type === 'count'}
+                />
+              )}
                 {currentChallenge.questionSuffix && (
                   <span>{currentChallenge.questionSuffix}</span>
                 )}
@@ -349,13 +358,14 @@ const ShapeGame: React.FC = () => {
             <div className="flex items-center justify-center gap-3 mb-4">
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
                 <span>{currentChallenge.question}</span>
-                {currentChallenge.questionShape && (
-                  <InlineShape 
-                    type={currentChallenge.questionShape.type} 
-                    color={currentChallenge.questionShape.color}
-                    size={60}
-                  />
-                )}
+              {currentChallenge.questionShape && (
+                <InlineShape 
+                  type={currentChallenge.questionShape.type} 
+                  color={currentChallenge.questionShape.color}
+                  size={60}
+                  usePlural={currentChallenge.type === 'count'}
+                />
+              )}
                 {currentChallenge.questionSuffix && (
                   <span>{currentChallenge.questionSuffix}</span>
                 )}

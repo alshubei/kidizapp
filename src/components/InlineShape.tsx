@@ -1,11 +1,12 @@
 import React from 'react';
 import { ShapeType, ShapeColor, Shape } from '@/types/game';
-import { getShapeDescription, getShapeName } from '@/lib/shapeGameUtils';
+import { getShapeDescription, getShapeName, getShapeNamePlural } from '@/lib/shapeGameUtils';
 
 interface InlineShapeProps {
   type: ShapeType;
   color?: ShapeColor;
   size?: number;
+  usePlural?: boolean; // For count questions - use plural form without color
 }
 
 const colorValues: Record<string, string> = {
@@ -124,13 +125,17 @@ const renderInlineShape = (type: ShapeType, color: string, size: number) => {
 export const InlineShape: React.FC<InlineShapeProps> = ({ 
   type, 
   color, 
-  size = 32 
+  size = 32,
+  usePlural = false
 }) => {
   const shapeColor = color && colorValues[color] ? colorValues[color] : '#6b7280';
   
   // Create shape object for description
   const shape: Shape | null = color ? { type, color } : null;
-  const ariaLabel = shape ? getShapeDescription(shape) : getShapeName(type);
+  // For count questions, use plural form without color; otherwise use full description
+  const ariaLabel = usePlural 
+    ? getShapeNamePlural(type)
+    : (shape ? getShapeDescription(shape) : getShapeName(type));
   
   return (
     <svg

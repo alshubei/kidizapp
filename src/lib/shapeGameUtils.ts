@@ -35,6 +35,22 @@ export const getColorName = (color: ShapeColor): string => COLOR_NAMES[color];
 export const getShapeName = (shape: ShapeType): string => SHAPE_NAMES[shape];
 
 /**
+ * Get just the shape name in plural form for count questions
+ * (e.g., "Kreise", "Quadrate", "Dreiecke")
+ */
+export const getShapeNamePlural = (shapeType: ShapeType): string => {
+  const plurals: Record<ShapeType, string> = {
+    circle: 'Kreise',
+    square: 'Quadrate',
+    triangle: 'Dreiecke',
+    star: 'Sterne',
+    heart: 'Herzen',
+    diamond: 'Rauten',
+  };
+  return plurals[shapeType];
+};
+
+/**
  * Get a German text description of a shape (e.g., "roter Kreis", "blaues Quadrat")
  * Handles German grammar for color adjectives based on noun gender
  */

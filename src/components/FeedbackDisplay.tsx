@@ -75,6 +75,7 @@ export const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({
               className={`
                 w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80
                 mx-auto object-contain
+                rounded-3xl sm:rounded-[2rem]
                 ${isCorrect ? 'animate-bounce-in-rotate' : 'animate-wobble'}
                 drop-shadow-2xl
               `}

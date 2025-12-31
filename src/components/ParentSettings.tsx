@@ -1,6 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { CameraCapture } from '@/components/CameraCapture';
 import { recordAudio, blobToDataURL, playAudio } from '@/lib/audioUtils';
+import { saveCustomImage, saveCustomAudio, loadCustomImage, loadCustomAudio, compressImage } from '@/lib/assetStorage';
 
 interface ParentSettingsProps {
   isOpen: boolean;
@@ -41,18 +42,47 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
   
   const ages: number[] = [3, 4, 5, 6, 7, 8, 9, 10];
 
+  // Load saved assets from localStorage when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // Load from localStorage (persisted assets)
+      const savedCorrectImage = loadCustomImage('correct');
+      const savedWrongImage = loadCustomImage('wrong');
+      const savedCorrectAudio = loadCustomAudio('correct');
+      const savedWrongAudio = loadCustomAudio('wrong');
+
+      // Use saved assets if available, otherwise use props
+      setPreview({
+        correct: savedCorrectImage || customImages.correct,
+        wrong: savedWrongImage || customImages.wrong,
+      });
+      setAudioPreview({
+        correct: savedCorrectAudio || customAudio.correct,
+        wrong: savedWrongAudio || customAudio.wrong,
+      });
+      setSelectedAge(currentAge);
+    }
+  }, [isOpen, customImages, customAudio, currentAge]);
+
   if (!isOpen) return null;
 
-  const handleFileChange = (type: 'correct' | 'wrong', file: File | null) => {
+  const handleFileChange = async (type: 'correct' | 'wrong', file: File | null) => {
     if (!file) {
       setPreview(prev => ({ ...prev, [type]: null }));
       return;
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const result = e.target?.result as string;
-      setPreview(prev => ({ ...prev, [type]: result }));
+      // Compress image to save storage space
+      try {
+        const compressed = await compressImage(result);
+        setPreview(prev => ({ ...prev, [type]: compressed }));
+      } catch (error) {
+        console.error('Error compressing image:', error);
+        setPreview(prev => ({ ...prev, [type]: result }));
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -62,8 +92,15 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
     setShowCamera(prev => ({ ...prev, [type]: true }));
   };
 
-  const handleCameraCaptureComplete = (type: 'correct' | 'wrong', image: string) => {
-    setPreview(prev => ({ ...prev, [type]: image }));
+  const handleCameraCaptureComplete = async (type: 'correct' | 'wrong', image: string) => {
+    try {
+      // Compress camera image to save storage space
+      const compressed = await compressImage(image);
+      setPreview(prev => ({ ...prev, [type]: compressed }));
+    } catch (error) {
+      console.error('Error compressing camera image:', error);
+      setPreview(prev => ({ ...prev, [type]: image }));
+    }
     setShowCamera(prev => ({ ...prev, [type]: false }));
     setCameraType(null);
   };
@@ -77,7 +114,6 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
     try {
       const recorder = await recordAudio();
       recorderRef.current = recorder;
-      setRecordingType(type);
       setIsRecording(prev => ({ ...prev, [type]: true }));
       recorder.start();
     } catch (error) {
@@ -115,6 +151,13 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
   };
 
   const handleSave = () => {
+    // Save to localStorage for offline use
+    saveCustomImage('correct', preview.correct);
+    saveCustomImage('wrong', preview.wrong);
+    saveCustomAudio('correct', audioPreview.correct);
+    saveCustomAudio('wrong', audioPreview.wrong);
+    
+    // Update parent component state
     onImageChange('correct', preview.correct);
     onImageChange('wrong', preview.wrong);
     onAudioChange('correct', audioPreview.correct);
@@ -128,6 +171,9 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
   const handleReset = (type: 'correct' | 'wrong') => {
     setPreview(prev => ({ ...prev, [type]: null }));
     setAudioPreview(prev => ({ ...prev, [type]: null }));
+    // Also clear from localStorage
+    saveCustomImage(type, null);
+    saveCustomAudio(type, null);
     if (type === 'correct' && correctInputRef.current) {
       correctInputRef.current.value = '';
     }
@@ -153,6 +199,7 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
 
         <p className="text-muted-foreground mb-6 text-sm">
           Hier kannst du das Alter deines Kindes ändern, eigene Bilder und Audio-Aufnahmen für das Feedback hochladen.
+          <span className="block mt-2 text-xs">💾 Alle Einstellungen werden lokal gespeichert und funktionieren offline.</span>
         </p>
 
         {/* Age Selection */}
@@ -187,37 +234,48 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
           <label className="block font-bold text-success mb-2">
             ✅ Bild für "Richtig"
           </label>
-          <div className="flex items-center gap-4">
-            <div className="w-24 h-24 rounded-xl border-2 border-dashed border-success/50 flex items-center justify-center overflow-hidden bg-success/10">
+          <div className="space-y-3">
+            {/* Large preview */}
+            <div className="w-full h-48 rounded-xl border-2 border-dashed border-success/50 flex items-center justify-center overflow-hidden bg-success/10">
               {preview.correct ? (
-                <img src={preview.correct} alt="Richtig Preview" className="w-full h-full object-cover" />
+                <img 
+                  src={preview.correct} 
+                  alt="Richtig Preview" 
+                  className="w-full h-full object-contain" 
+                />
               ) : (
-                <span className="text-3xl">😊</span>
+                <div className="text-center">
+                  <span className="text-6xl block mb-2">😊</span>
+                  <span className="text-sm text-muted-foreground">Kein Bild ausgewählt</span>
+                </div>
               )}
             </div>
-            <div className="flex-1 space-y-2">
+            <div className="space-y-2">
               <div className="flex gap-2">
-                <input
-                  ref={correctInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileChange('correct', e.target.files?.[0] || null)}
-                  className="text-sm flex-1"
-                />
+                <label className="flex-1 px-4 py-2 bg-btn-blue text-white rounded-lg text-sm font-bold hover:bg-btn-blue/80 transition-all cursor-pointer text-center">
+                  📁 Bild auswählen
+                  <input
+                    ref={correctInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileChange('correct', e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                </label>
                 <button
                   onClick={() => handleCameraCapture('correct')}
-                  className="px-3 py-2 bg-btn-blue text-white rounded-lg text-sm font-bold hover:bg-btn-blue/80 transition-all"
+                  className="px-4 py-2 bg-btn-blue text-white rounded-lg text-sm font-bold hover:bg-btn-blue/80 transition-all"
                   title="Kamera"
                 >
-                  📷
+                  📷 Kamera
                 </button>
               </div>
               {preview.correct && (
                 <button
                   onClick={() => handleReset('correct')}
-                  className="text-xs text-destructive hover:underline"
+                  className="w-full text-sm text-destructive hover:underline py-1"
                 >
-                  Zurücksetzen
+                  🗑️ Bild entfernen
                 </button>
               )}
             </div>
@@ -229,37 +287,48 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
           <label className="block font-bold text-destructive mb-2">
             ❌ Bild für "Falsch"
           </label>
-          <div className="flex items-center gap-4">
-            <div className="w-24 h-24 rounded-xl border-2 border-dashed border-destructive/50 flex items-center justify-center overflow-hidden bg-destructive/10">
+          <div className="space-y-3">
+            {/* Large preview */}
+            <div className="w-full h-48 rounded-xl border-2 border-dashed border-destructive/50 flex items-center justify-center overflow-hidden bg-destructive/10">
               {preview.wrong ? (
-                <img src={preview.wrong} alt="Falsch Preview" className="w-full h-full object-cover" />
+                <img 
+                  src={preview.wrong} 
+                  alt="Falsch Preview" 
+                  className="w-full h-full object-contain" 
+                />
               ) : (
-                <span className="text-3xl">😢</span>
+                <div className="text-center">
+                  <span className="text-6xl block mb-2">😢</span>
+                  <span className="text-sm text-muted-foreground">Kein Bild ausgewählt</span>
+                </div>
               )}
             </div>
-            <div className="flex-1 space-y-2">
+            <div className="space-y-2">
               <div className="flex gap-2">
-                <input
-                  ref={wrongInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileChange('wrong', e.target.files?.[0] || null)}
-                  className="text-sm flex-1"
-                />
+                <label className="flex-1 px-4 py-2 bg-btn-blue text-white rounded-lg text-sm font-bold hover:bg-btn-blue/80 transition-all cursor-pointer text-center">
+                  📁 Bild auswählen
+                  <input
+                    ref={wrongInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileChange('wrong', e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                </label>
                 <button
                   onClick={() => handleCameraCapture('wrong')}
-                  className="px-3 py-2 bg-btn-blue text-white rounded-lg text-sm font-bold hover:bg-btn-blue/80 transition-all"
+                  className="px-4 py-2 bg-btn-blue text-white rounded-lg text-sm font-bold hover:bg-btn-blue/80 transition-all"
                   title="Kamera"
                 >
-                  📷
+                  📷 Kamera
                 </button>
               </div>
               {preview.wrong && (
                 <button
                   onClick={() => handleReset('wrong')}
-                  className="text-xs text-destructive hover:underline"
+                  className="w-full text-sm text-destructive hover:underline py-1"
                 >
-                  Zurücksetzen
+                  🗑️ Bild entfernen
                 </button>
               )}
             </div>
@@ -271,21 +340,27 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
           <label className="block font-bold text-success mb-2">
             🔊 Audio für "Richtig"
           </label>
-          <div className="flex items-center gap-4">
-            <div className="w-24 h-24 rounded-xl border-2 border-dashed border-success/50 flex items-center justify-center bg-success/10">
+          <div className="space-y-3">
+            <div className="w-full h-24 rounded-xl border-2 border-dashed border-success/50 flex items-center justify-center bg-success/10">
               {audioPreview.correct ? (
-                <button
-                  onClick={() => handlePlayAudio('correct')}
-                  className="text-3xl hover:scale-110 transition-transform"
-                  title="Abspielen"
-                >
-                  ▶️
-                </button>
+                <div className="flex flex-col items-center gap-2">
+                  <button
+                    onClick={() => handlePlayAudio('correct')}
+                    className="text-4xl hover:scale-110 transition-transform"
+                    title="Abspielen"
+                  >
+                    ▶️
+                  </button>
+                  <span className="text-xs text-muted-foreground">Klicke zum Abspielen</span>
+                </div>
               ) : (
-                <span className="text-3xl">🔇</span>
+                <div className="text-center">
+                  <span className="text-4xl block mb-1">🔇</span>
+                  <span className="text-sm text-muted-foreground">Keine Aufnahme</span>
+                </div>
               )}
             </div>
-            <div className="flex-1 space-y-2">
+            <div className="space-y-2">
               {!isRecording.correct ? (
                 <button
                   onClick={() => handleStartRecording('correct')}
@@ -305,10 +380,11 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
                 <button
                   onClick={() => {
                     setAudioPreview(prev => ({ ...prev, correct: null }));
+                    saveCustomAudio('correct', null);
                   }}
-                  className="text-xs text-destructive hover:underline"
+                  className="w-full text-sm text-destructive hover:underline py-1"
                 >
-                  Zurücksetzen
+                  🗑️ Audio entfernen
                 </button>
               )}
             </div>
@@ -320,21 +396,27 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
           <label className="block font-bold text-destructive mb-2">
             🔊 Audio für "Falsch"
           </label>
-          <div className="flex items-center gap-4">
-            <div className="w-24 h-24 rounded-xl border-2 border-dashed border-destructive/50 flex items-center justify-center bg-destructive/10">
+          <div className="space-y-3">
+            <div className="w-full h-24 rounded-xl border-2 border-dashed border-destructive/50 flex items-center justify-center bg-destructive/10">
               {audioPreview.wrong ? (
-                <button
-                  onClick={() => handlePlayAudio('wrong')}
-                  className="text-3xl hover:scale-110 transition-transform"
-                  title="Abspielen"
-                >
-                  ▶️
-                </button>
+                <div className="flex flex-col items-center gap-2">
+                  <button
+                    onClick={() => handlePlayAudio('wrong')}
+                    className="text-4xl hover:scale-110 transition-transform"
+                    title="Abspielen"
+                  >
+                    ▶️
+                  </button>
+                  <span className="text-xs text-muted-foreground">Klicke zum Abspielen</span>
+                </div>
               ) : (
-                <span className="text-3xl">🔇</span>
+                <div className="text-center">
+                  <span className="text-4xl block mb-1">🔇</span>
+                  <span className="text-sm text-muted-foreground">Keine Aufnahme</span>
+                </div>
               )}
             </div>
-            <div className="flex-1 space-y-2">
+            <div className="space-y-2">
               {!isRecording.wrong ? (
                 <button
                   onClick={() => handleStartRecording('wrong')}
@@ -354,10 +436,11 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
                 <button
                   onClick={() => {
                     setAudioPreview(prev => ({ ...prev, wrong: null }));
+                    saveCustomAudio('wrong', null);
                   }}
-                  className="text-xs text-destructive hover:underline"
+                  className="w-full text-sm text-destructive hover:underline py-1"
                 >
-                  Zurücksetzen
+                  🗑️ Audio entfernen
                 </button>
               )}
             </div>

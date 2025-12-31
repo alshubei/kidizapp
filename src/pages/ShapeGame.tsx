@@ -10,6 +10,7 @@ import { InlineShape } from '@/components/InlineShape';
 import { useShapeGameLogic } from '@/hooks/useShapeGameLogic';
 import { useSpeech } from '@/hooks/useSpeech';
 import { getAgeFromStorage, saveAgeToStorage } from '@/lib/ageUtils';
+import { loadAllCustomAssets } from '@/lib/assetStorage';
 import { AgeRange, Shape } from '@/types/game';
 
 const ShapeGame: React.FC = () => {
@@ -26,7 +27,7 @@ const ShapeGame: React.FC = () => {
     wrong: null,
   });
 
-  // Load age from storage on mount
+  // Load age and custom assets from storage on mount
   useEffect(() => {
     const storedAge = getAgeFromStorage();
     if (storedAge) {
@@ -39,6 +40,21 @@ const ShapeGame: React.FC = () => {
     } else {
       // No age set, redirect to home
       navigate('/', { replace: true });
+    }
+
+    // Load custom assets from localStorage
+    const assets = loadAllCustomAssets();
+    if (assets.correctImage) {
+      setCustomImages(prev => ({ ...prev, correct: assets.correctImage }));
+    }
+    if (assets.wrongImage) {
+      setCustomImages(prev => ({ ...prev, wrong: assets.wrongImage }));
+    }
+    if (assets.correctAudio) {
+      setCustomAudio(prev => ({ ...prev, correct: assets.correctAudio }));
+    }
+    if (assets.wrongAudio) {
+      setCustomAudio(prev => ({ ...prev, wrong: assets.wrongAudio }));
     }
   }, [navigate]);
 

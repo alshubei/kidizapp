@@ -1,0 +1,190 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Patrick+Hand&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Warm, child-friendly color palette */
+    --background: 45 100% 96%;
+    --foreground: 25 30% 25%;
+
+    --card: 45 80% 98%;
+    --card-foreground: 25 30% 25%;
+
+    --popover: 45 80% 98%;
+    --popover-foreground: 25 30% 25%;
+
+    /* Chalkboard green */
+    --primary: 120 40% 25%;
+    --primary-foreground: 45 100% 96%;
+
+    /* Soft pink */
+    --secondary: 350 70% 85%;
+    --secondary-foreground: 350 50% 30%;
+
+    /* Warm cream */
+    --muted: 40 50% 90%;
+    --muted-foreground: 25 20% 45%;
+
+    /* Cheerful sky blue */
+    --accent: 200 80% 75%;
+    --accent-foreground: 200 60% 25%;
+
+    /* Soft coral for errors */
+    --destructive: 10 70% 65%;
+    --destructive-foreground: 10 80% 20%;
+
+    /* Success green */
+    --success: 140 60% 55%;
+    --success-foreground: 140 80% 15%;
+
+    /* Golden yellow for stars */
+    --golden: 45 95% 55%;
+    --golden-foreground: 45 90% 20%;
+
+    --border: 35 40% 85%;
+    --input: 35 40% 85%;
+    --ring: 120 40% 35%;
+
+    --radius: 1rem;
+
+    /* Chalkboard specific */
+    --chalkboard: 140 35% 22%;
+    --chalkboard-frame: 25 50% 35%;
+    --chalk: 45 30% 95%;
+
+    /* Fun colors for buttons */
+    --btn-pink: 340 75% 70%;
+    --btn-blue: 200 75% 65%;
+    --btn-green: 140 55% 55%;
+    --btn-yellow: 45 90% 60%;
+    --btn-purple: 280 60% 70%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-fredoka;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .font-fredoka {
+    font-family: 'Fredoka', sans-serif;
+  }
+
+  .font-chalk {
+    font-family: 'Patrick Hand', cursive;
+  }
+
+  .chalkboard-bg {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--chalkboard)) 0%,
+      hsl(140 30% 18%) 50%,
+      hsl(var(--chalkboard)) 100%
+    );
+    box-shadow: 
+      inset 0 0 60px rgba(0, 0, 0, 0.3),
+      inset 0 0 100px rgba(0, 0, 0, 0.2);
+  }
+
+  .wood-frame {
+    background: linear-gradient(
+      180deg,
+      hsl(25 55% 40%) 0%,
+      hsl(var(--chalkboard-frame)) 20%,
+      hsl(25 45% 30%) 80%,
+      hsl(25 50% 25%) 100%
+    );
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 2px 4px rgba(255, 255, 255, 0.2);
+  }
+
+  .chalk-text {
+    color: hsl(var(--chalk));
+    text-shadow: 
+      0 0 10px rgba(255, 255, 255, 0.3),
+      2px 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .btn-bounce {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .btn-bounce:hover {
+    transform: scale(1.05) translateY(-2px);
+  }
+
+  .btn-bounce:active {
+    transform: scale(0.98);
+  }
+
+  .star-glow {
+    filter: drop-shadow(0 0 8px hsl(var(--golden)));
+    animation: star-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes star-pulse {
+    0%, 100% {
+      filter: drop-shadow(0 0 8px hsl(var(--golden)));
+    }
+    50% {
+      filter: drop-shadow(0 0 16px hsl(var(--golden)));
+    }
+  }
+
+  @keyframes bounce-in {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .animate-bounce-in {
+    animation: bounce-in 0.5s ease-out forwards;
+  }
+
+  .animate-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .gradient-warm {
+    background: linear-gradient(
+      135deg,
+      hsl(45 100% 96%) 0%,
+      hsl(35 80% 92%) 50%,
+      hsl(45 90% 94%) 100%
+    );
+  }
+}

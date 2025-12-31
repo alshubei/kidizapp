@@ -11,7 +11,28 @@ export const useShapeGameLogic = (age: AgeRange) => {
   });
 
   const checkAnswer = useCallback((userAnswer: number | any): boolean => {
-    const isCorrect = JSON.stringify(userAnswer) === JSON.stringify(state.currentChallenge.correctAnswer);
+    const challenge = state.currentChallenge;
+    let isCorrect = false;
+
+    if (challenge.type === 'match') {
+      // Match game: compare by type only (question asks to find by type)
+      const userShape = userAnswer as { type: string; color: string };
+      const correctShape = challenge.correctAnswer as { type: string; color: string };
+      isCorrect = userShape.type === correctShape.type;
+    } else if (challenge.type === 'color-match') {
+      // Color-match game: compare by color only
+      const userShape = userAnswer as { type: string; color: string };
+      const correctShape = challenge.correctAnswer as { type: string; color: string };
+      isCorrect = userShape.color === correctShape.color;
+    } else if (challenge.type === 'find') {
+      // Find game: compare by type only (question asks to find by type, e.g., "Klicke auf das ⭐!")
+      const userShape = userAnswer as { type: string; color: string };
+      const correctShape = challenge.correctAnswer as { type: string; color: string };
+      isCorrect = userShape.type === correctShape.type;
+    } else if (challenge.type === 'count') {
+      // Count game: compare numbers
+      isCorrect = userAnswer === challenge.correctAnswer;
+    }
     
     setState(prev => ({
       ...prev,
@@ -21,7 +42,7 @@ export const useShapeGameLogic = (age: AgeRange) => {
     }));
 
     return isCorrect;
-  }, [state.currentChallenge.correctAnswer]);
+  }, [state.currentChallenge]);
 
   const nextChallenge = useCallback(() => {
     setState(prev => ({

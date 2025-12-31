@@ -34,6 +34,17 @@ export const createShapes = (count: number): Shape[] => {
 };
 
 /**
+ * Create shapes that exclude a specific shape type
+ */
+export const createShapesExcludingType = (count: number, excludeType: ShapeType): Shape[] => {
+  const availableShapes = SHAPES.filter(s => s !== excludeType);
+  return Array.from({ length: count }, () => ({
+    type: availableShapes[Math.floor(Math.random() * availableShapes.length)],
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+  }));
+};
+
+/**
  * Generate age-appropriate shape challenges
  */
 export const generateShapeChallenge = (age: AgeRange): ShapeChallenge => {
@@ -66,8 +77,8 @@ export const generateShapeChallenge = (age: AgeRange): ShapeChallenge => {
       for (let i = 0; i < count; i++) {
         shapes.push({ type: shapeType, color: COLORS[Math.floor(Math.random() * COLORS.length)] });
       }
-      // Add some other shapes
-      const otherShapes = createShapes(5 - count);
+      // Add some other shapes (excluding the target type to avoid confusion)
+      const otherShapes = createShapesExcludingType(5 - count, shapeType);
       shapes.push(...otherShapes);
       shapes.sort(() => Math.random() - 0.5);
       
@@ -104,8 +115,8 @@ export const generateShapeChallenge = (age: AgeRange): ShapeChallenge => {
       for (let i = 0; i < count; i++) {
         shapes.push({ type: shapeType, color: COLORS[Math.floor(Math.random() * COLORS.length)] });
       }
-      // Add some other shapes
-      const otherShapes = createShapes(6 - count);
+      // Add some other shapes (excluding the target type to avoid confusion)
+      const otherShapes = createShapesExcludingType(6 - count, shapeType);
       shapes.push(...otherShapes);
       shapes.sort(() => Math.random() - 0.5);
       

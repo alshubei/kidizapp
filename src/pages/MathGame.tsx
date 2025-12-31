@@ -130,16 +130,31 @@ const MathGame: React.FC = () => {
   const { isMuted, toggleMute, speakCorrect, speakWrong, speakQuestion } = useSpeech(customAudio);
   const { recognizeDigit, isRecognizing } = useHandwritingRecognition();
 
+  // Function to build and speak the math question
+  const speakCurrentQuestion = useCallback(() => {
+    if (!currentProblem) {
+      console.log('No current problem to speak');
+      return;
+    }
+    
+    const operatorText = currentProblem.operator === '+' ? 'plus' : 'minus';
+    const num1Text = numberToGerman(currentProblem.num1);
+    const num2Text = numberToGerman(currentProblem.num2);
+    const questionText = `${num1Text} ${operatorText} ${num2Text}`;
+    console.log('speakCurrentQuestion called with:', questionText);
+    speakQuestion(questionText);
+  }, [currentProblem, speakQuestion]);
+
   // Speak the math problem when it changes
   useEffect(() => {
     if (currentProblem && feedback === 'none') {
-      const operatorText = currentProblem.operator === '+' ? 'plus' : 'minus';
-      const num1Text = numberToGerman(currentProblem.num1);
-      const num2Text = numberToGerman(currentProblem.num2);
-      const questionText = `${num1Text} ${operatorText} ${num2Text}`;
-      speakQuestion(questionText);
+      // Small delay to ensure page is ready and voices are loaded
+      const timer = setTimeout(() => {
+        speakCurrentQuestion();
+      }, 300);
+      return () => clearTimeout(timer);
     }
-  }, [currentProblem, speakQuestion, feedback]);
+  }, [currentProblem, speakCurrentQuestion, feedback]);
 
   // Trigger confetti on 3-streak
   useEffect(() => {
@@ -312,7 +327,17 @@ const MathGame: React.FC = () => {
 
         {/* Chalkboard */}
         <div className="mb-6">
-          <Chalkboard problem={currentProblem} />
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <Chalkboard problem={currentProblem} />
+            <button
+              onClick={speakCurrentQuestion}
+              className="btn-bounce bg-btn-blue text-white p-2 sm:p-3 rounded-full shadow-fun-sm hover:bg-btn-blue/90 transition-all flex-shrink-0"
+              title="Frage nochmal hören"
+              aria-label="Frage nochmal hören"
+            >
+              <span className="text-xl sm:text-2xl">🔊</span>
+            </button>
+          </div>
         </div>
 
         {/* Drawing Canvas */}

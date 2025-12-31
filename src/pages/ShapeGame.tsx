@@ -74,26 +74,41 @@ const ShapeGame: React.FC = () => {
 
   const { isMuted, toggleMute, speakCorrect, speakWrong, speakQuestion } = useSpeech(customAudio);
 
+  // Function to build and speak the question text
+  const speakCurrentQuestion = useCallback(() => {
+    if (!currentChallenge) {
+      console.log('No current challenge to speak');
+      return;
+    }
+    
+    // Build the full question text including shape and suffix
+    let questionText = currentChallenge.question;
+    
+    // If there's a shape in the question, add its description
+    if (currentChallenge.questionShape) {
+      const shapeDescription = getShapeDescription(currentChallenge.questionShape);
+      questionText += ' ' + shapeDescription;
+    }
+    
+    // Add suffix if present
+    if (currentChallenge.questionSuffix) {
+      questionText += ' ' + currentChallenge.questionSuffix;
+    }
+    
+    console.log('speakCurrentQuestion called with:', questionText);
+    speakQuestion(questionText);
+  }, [currentChallenge, speakQuestion]);
+
   // Speak the question when it changes
   useEffect(() => {
     if (currentChallenge && feedback === 'none') {
-      // Build the full question text including shape and suffix
-      let questionText = currentChallenge.question;
-      
-      // If there's a shape in the question, add its description
-      if (currentChallenge.questionShape) {
-        const shapeDescription = getShapeDescription(currentChallenge.questionShape);
-        questionText += ' ' + shapeDescription;
-      }
-      
-      // Add suffix if present
-      if (currentChallenge.questionSuffix) {
-        questionText += ' ' + currentChallenge.questionSuffix;
-      }
-      
-      speakQuestion(questionText);
+      // Small delay to ensure page is ready and voices are loaded
+      const timer = setTimeout(() => {
+        speakCurrentQuestion();
+      }, 300);
+      return () => clearTimeout(timer);
     }
-  }, [currentChallenge, speakQuestion, feedback]);
+  }, [currentChallenge, speakCurrentQuestion, feedback]);
 
   // Trigger confetti on 3-streak
   useEffect(() => {
@@ -181,19 +196,29 @@ const ShapeGame: React.FC = () => {
       return (
         <div className="space-y-6">
           <div className="text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 flex items-center justify-center gap-2 flex-wrap">
-              <span>{currentChallenge.question}</span>
-              {currentChallenge.questionShape && (
-                <InlineShape 
-                  type={currentChallenge.questionShape.type} 
-                  color={currentChallenge.questionShape.color}
-                  size={60}
-                />
-              )}
-              {currentChallenge.questionSuffix && (
-                <span>{currentChallenge.questionSuffix}</span>
-              )}
-            </h2>
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
+                <span>{currentChallenge.question}</span>
+                {currentChallenge.questionShape && (
+                  <InlineShape 
+                    type={currentChallenge.questionShape.type} 
+                    color={currentChallenge.questionShape.color}
+                    size={60}
+                  />
+                )}
+                {currentChallenge.questionSuffix && (
+                  <span>{currentChallenge.questionSuffix}</span>
+                )}
+              </h2>
+              <button
+                onClick={speakCurrentQuestion}
+                className="btn-bounce bg-btn-blue text-white p-2 sm:p-3 rounded-full shadow-fun-sm hover:bg-btn-blue/90 transition-all"
+                title="Frage nochmal hören"
+                aria-label="Frage nochmal hören"
+              >
+                <span className="text-xl sm:text-2xl">🔊</span>
+              </button>
+            </div>
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
@@ -236,19 +261,29 @@ const ShapeGame: React.FC = () => {
       return (
         <div className="space-y-6">
           <div className="text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 flex items-center justify-center gap-2 flex-wrap">
-              <span>{currentChallenge.question}</span>
-              {currentChallenge.questionShape && (
-                <InlineShape 
-                  type={currentChallenge.questionShape.type} 
-                  color={currentChallenge.questionShape.color}
-                  size={60}
-                />
-              )}
-              {currentChallenge.questionSuffix && (
-                <span>{currentChallenge.questionSuffix}</span>
-              )}
-            </h2>
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
+                <span>{currentChallenge.question}</span>
+                {currentChallenge.questionShape && (
+                  <InlineShape 
+                    type={currentChallenge.questionShape.type} 
+                    color={currentChallenge.questionShape.color}
+                    size={60}
+                  />
+                )}
+                {currentChallenge.questionSuffix && (
+                  <span>{currentChallenge.questionSuffix}</span>
+                )}
+              </h2>
+              <button
+                onClick={speakCurrentQuestion}
+                className="btn-bounce bg-btn-blue text-white p-2 sm:p-3 rounded-full shadow-fun-sm hover:bg-btn-blue/90 transition-all"
+                title="Frage nochmal hören"
+                aria-label="Frage nochmal hören"
+              >
+                <span className="text-xl sm:text-2xl">🔊</span>
+              </button>
+            </div>
           </div>
           
           {/* Shapes display area - clearly non-interactive */}
@@ -311,19 +346,29 @@ const ShapeGame: React.FC = () => {
       return (
         <div className="space-y-6">
           <div className="text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 flex items-center justify-center gap-2 flex-wrap">
-              <span>{currentChallenge.question}</span>
-              {currentChallenge.questionShape && (
-                <InlineShape 
-                  type={currentChallenge.questionShape.type} 
-                  color={currentChallenge.questionShape.color}
-                  size={60}
-                />
-              )}
-              {currentChallenge.questionSuffix && (
-                <span>{currentChallenge.questionSuffix}</span>
-              )}
-            </h2>
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
+                <span>{currentChallenge.question}</span>
+                {currentChallenge.questionShape && (
+                  <InlineShape 
+                    type={currentChallenge.questionShape.type} 
+                    color={currentChallenge.questionShape.color}
+                    size={60}
+                  />
+                )}
+                {currentChallenge.questionSuffix && (
+                  <span>{currentChallenge.questionSuffix}</span>
+                )}
+              </h2>
+              <button
+                onClick={speakCurrentQuestion}
+                className="btn-bounce bg-btn-blue text-white p-2 sm:p-3 rounded-full shadow-fun-sm hover:bg-btn-blue/90 transition-all"
+                title="Frage nochmal hören"
+                aria-label="Frage nochmal hören"
+              >
+                <span className="text-xl sm:text-2xl">🔊</span>
+              </button>
+            </div>
           </div>
           
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 max-w-2xl mx-auto">

@@ -6,6 +6,8 @@ interface ChallengeHistory {
   challenge: ShapeChallenge;
   score: number;
   streak: number;
+  selectedAnswer: number | Shape | null;
+  feedback: 'none' | 'correct' | 'wrong';
 }
 
 export const useShapeGameLogic = (age: AgeRange) => {
@@ -59,7 +61,7 @@ export const useShapeGameLogic = (age: AgeRange) => {
     return isCorrect;
   }, [state.currentChallenge]);
 
-  const nextChallenge = useCallback(() => {
+  const nextChallenge = useCallback((selectedAnswer: number | Shape | null = null) => {
     setState(prev => {
       // Save current state to history before moving forward
       const newHistory = history.slice(0, historyIndex + 1);
@@ -67,6 +69,8 @@ export const useShapeGameLogic = (age: AgeRange) => {
         challenge: prev.currentChallenge,
         score: prev.score,
         streak: prev.streak,
+        selectedAnswer: selectedAnswer,
+        feedback: prev.feedback,
       });
       setHistory(newHistory);
       setHistoryIndex(newHistory.length - 1);
@@ -86,10 +90,16 @@ export const useShapeGameLogic = (age: AgeRange) => {
         score: prevState.score,
         streak: prevState.streak,
         currentChallenge: prevState.challenge,
-        feedback: 'none',
+        feedback: prevState.feedback,
       });
       setHistoryIndex(historyIndex - 1);
+      // Return the selected answer and feedback so the component can restore it
+      return {
+        selectedAnswer: prevState.selectedAnswer,
+        feedback: prevState.feedback,
+      };
     }
+    return null;
   }, [history, historyIndex]);
 
   const retry = useCallback(() => {

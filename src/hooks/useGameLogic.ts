@@ -23,6 +23,10 @@ interface ProblemHistory {
   problem: MathProblem;
   score: number;
   streak: number;
+  selectedAnswer: number | null;
+  feedback: 'none' | 'correct' | 'wrong';
+  lastAnswer: number | null; // For handwriting recognition
+  canvasImageData: string | null; // Canvas drawing as data URL
 }
 
 export const useGameLogic = (age: AgeRange) => {
@@ -49,7 +53,7 @@ export const useGameLogic = (age: AgeRange) => {
     return isCorrect;
   }, [state.currentProblem.answer]);
 
-  const nextProblem = useCallback(() => {
+  const nextProblem = useCallback((selectedAnswer: number | null = null, lastAnswer: number | null = null, canvasImageData: string | null = null) => {
     setState(prev => {
       // Save current state to history before moving forward
       const newHistory = history.slice(0, historyIndex + 1);
@@ -57,6 +61,10 @@ export const useGameLogic = (age: AgeRange) => {
         problem: prev.currentProblem,
         score: prev.score,
         streak: prev.streak,
+        selectedAnswer: selectedAnswer,
+        feedback: prev.feedback,
+        lastAnswer: lastAnswer,
+        canvasImageData: canvasImageData,
       });
       setHistory(newHistory);
       setHistoryIndex(newHistory.length - 1);
@@ -76,11 +84,19 @@ export const useGameLogic = (age: AgeRange) => {
         score: prevState.score,
         streak: prevState.streak,
         currentProblem: prevState.problem,
-        feedback: 'none',
+        feedback: prevState.feedback,
         isProcessing: false,
       });
       setHistoryIndex(historyIndex - 1);
+      // Return the selected answer and feedback so the component can restore it
+      return {
+        selectedAnswer: prevState.selectedAnswer,
+        feedback: prevState.feedback,
+        lastAnswer: prevState.lastAnswer,
+        canvasImageData: prevState.canvasImageData,
+      };
     }
+    return null;
   }, [history, historyIndex]);
 
   const retry = useCallback(() => {

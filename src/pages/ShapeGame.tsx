@@ -106,13 +106,18 @@ const ShapeGame: React.FC = () => {
   }, [checkAnswer, speakCorrect, speakWrong, feedback]);
 
   const handleNext = useCallback(() => {
-    nextChallenge();
+    nextChallenge(selectedAnswer);
     setSelectedAnswer(null);
-  }, [nextChallenge]);
+  }, [nextChallenge, selectedAnswer]);
 
   const handlePrev = useCallback(() => {
-    prevChallenge();
-    setSelectedAnswer(null);
+    const result = prevChallenge();
+    if (result) {
+      setSelectedAnswer(result.selectedAnswer);
+      // Note: feedback is already restored by the hook
+    } else {
+      setSelectedAnswer(null);
+    }
   }, [prevChallenge]);
 
   const handleRetry = useCallback(() => {
@@ -369,35 +374,35 @@ const ShapeGame: React.FC = () => {
           {renderGameContent()}
         </div>
 
-        {/* Navigation Buttons */}
-        {feedback === 'none' && (
-          <div className="flex justify-center gap-4 mt-6">
-            <button
-              onClick={handlePrev}
-              disabled={!hasPrevious}
-              className={`
-                btn-bounce bg-btn-purple text-white font-bold 
-                py-3 sm:py-4 px-6 sm:px-8 rounded-2xl 
-                text-lg sm:text-xl shadow-fun transition-all
-                disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-                flex items-center justify-center gap-2
-              `}
-            >
-              ⬅️ Zurück
-            </button>
-            <button
-              onClick={handleNext}
-              className={`
-                btn-bounce bg-btn-blue text-white font-bold 
-                py-3 sm:py-4 px-6 sm:px-8 rounded-2xl 
-                text-lg sm:text-xl shadow-fun transition-all
-                flex items-center justify-center gap-2
-              `}
-            >
-              Weiter ➡️
-            </button>
-          </div>
-        )}
+        {/* Navigation Buttons - Always visible to allow navigation between questions */}
+        <div className="flex justify-center gap-4 mt-6">
+          <button
+            onClick={handlePrev}
+            disabled={!hasPrevious}
+            className={`
+              btn-bounce bg-btn-purple text-white font-bold 
+              py-3 sm:py-4 px-6 sm:px-8 rounded-2xl 
+              text-lg sm:text-xl shadow-fun transition-all
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+              flex items-center justify-center gap-2
+              ${feedback !== 'none' ? 'opacity-75' : ''}
+            `}
+          >
+            ⬅️ Zurück
+          </button>
+          <button
+            onClick={handleNext}
+            className={`
+              btn-bounce bg-btn-blue text-white font-bold 
+              py-3 sm:py-4 px-6 sm:px-8 rounded-2xl 
+              text-lg sm:text-xl shadow-fun transition-all
+              flex items-center justify-center gap-2
+              ${feedback !== 'none' ? 'opacity-75' : ''}
+            `}
+          >
+            Weiter ➡️
+          </button>
+        </div>
       </div>
 
       {/* Feedback Overlay */}

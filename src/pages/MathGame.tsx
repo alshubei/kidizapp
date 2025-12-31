@@ -122,27 +122,55 @@ const MathGame: React.FC = () => {
   }, [isProcessing, isRecognizing, recognizeDigit, checkAnswer, speakCorrect, speakWrong, retry, setProcessing]);
 
   const handleNext = useCallback(() => {
-    nextProblem();
-    // Clear the canvas
+    // Save current canvas state before navigating
     const canvas = canvasRef.current;
+    const canvasImageData = canvas ? canvas.toDataURL() : null;
+    
+    nextProblem(lastAnswer, lastAnswer, canvasImageData);
+    
+    // Clear the canvas for the next problem
     const ctx = canvas?.getContext('2d');
     if (ctx && canvas) {
       ctx.fillStyle = '#1a3a1a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     setLastAnswer(null);
-  }, [nextProblem]);
+  }, [nextProblem, lastAnswer]);
 
   const handlePrev = useCallback(() => {
-    prevProblem();
-    // Clear the canvas
+    const result = prevProblem();
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
-    if (ctx && canvas) {
-      ctx.fillStyle = '#1a3a1a';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    if (result) {
+      // Restore the last answer if available
+      setLastAnswer(result.lastAnswer);
+      // Note: feedback is already restored by the hook
+      
+      // Restore the canvas drawing if available
+      if (ctx && canvas && result.canvasImageData) {
+        const img = new Image();
+        img.onload = () => {
+          // Clear canvas first
+          ctx.fillStyle = '#1a3a1a';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          // Draw the saved image
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = result.canvasImageData;
+      } else if (ctx && canvas) {
+        // No saved drawing, clear the canvas
+        ctx.fillStyle = '#1a3a1a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+    } else {
+      setLastAnswer(null);
+      // Clear the canvas
+      if (ctx && canvas) {
+        ctx.fillStyle = '#1a3a1a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
     }
-    setLastAnswer(null);
   }, [prevProblem]);
 
   const handleRetry = useCallback(() => {
@@ -258,35 +286,35 @@ const MathGame: React.FC = () => {
           />
         </div>
 
-        {/* Navigation Buttons */}
-        {feedback === 'none' && (
-          <div className="flex justify-center gap-4 mb-6">
-            <button
-              onClick={handlePrev}
-              disabled={!hasPrevious}
-              className={`
-                btn-bounce bg-btn-purple text-white font-bold 
-                py-3 sm:py-4 px-6 sm:px-8 rounded-2xl 
-                text-lg sm:text-xl shadow-fun transition-all
-                disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-                flex items-center justify-center gap-2
-              `}
-            >
-              ⬅️ Zurück
-            </button>
-            <button
-              onClick={handleNext}
-              className={`
-                btn-bounce bg-btn-blue text-white font-bold 
-                py-3 sm:py-4 px-6 sm:px-8 rounded-2xl 
-                text-lg sm:text-xl shadow-fun transition-all
-                flex items-center justify-center gap-2
-              `}
-            >
-              Weiter ➡️
-            </button>
-          </div>
-        )}
+        {/* Navigation Buttons - Always visible to allow navigation between questions */}
+        <div className="flex justify-center gap-4 mb-6">
+          <button
+            onClick={handlePrev}
+            disabled={!hasPrevious}
+            className={`
+              btn-bounce bg-btn-purple text-white font-bold 
+              py-3 sm:py-4 px-6 sm:px-8 rounded-2xl 
+              text-lg sm:text-xl shadow-fun transition-all
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+              flex items-center justify-center gap-2
+              ${feedback !== 'none' ? 'opacity-75' : ''}
+            `}
+          >
+            ⬅️ Zurück
+          </button>
+          <button
+            onClick={handleNext}
+            className={`
+              btn-bounce bg-btn-blue text-white font-bold 
+              py-3 sm:py-4 px-6 sm:px-8 rounded-2xl 
+              text-lg sm:text-xl shadow-fun transition-all
+              flex items-center justify-center gap-2
+              ${feedback !== 'none' ? 'opacity-75' : ''}
+            `}
+          >
+            Weiter ➡️
+          </button>
+        </div>
 
         {/* Footer hint */}
         <p className="text-center text-muted-foreground text-sm mt-8">

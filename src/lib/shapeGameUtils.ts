@@ -21,8 +21,61 @@ const COLOR_NAMES: Record<ShapeColor, string> = {
   orange: 'Orange',
 };
 
+const SHAPE_NAMES: Record<ShapeType, string> = {
+  circle: 'Kreis',
+  square: 'Quadrat',
+  triangle: 'Dreieck',
+  star: 'Stern',
+  heart: 'Herz',
+  diamond: 'Raute',
+};
+
 export const getShapeEmoji = (shape: ShapeType): string => SHAPE_EMOJIS[shape];
 export const getColorName = (color: ShapeColor): string => COLOR_NAMES[color];
+export const getShapeName = (shape: ShapeType): string => SHAPE_NAMES[shape];
+
+/**
+ * Get a German text description of a shape (e.g., "roter Kreis", "blaues Quadrat")
+ * Handles German grammar for color adjectives based on noun gender
+ */
+export const getShapeDescription = (shape: Shape): string => {
+  const shapeName = getShapeName(shape.type);
+  const colorName = getColorName(shape.color).toLowerCase();
+  
+  // German grammar: color adjectives need to match noun gender
+  // Masculine: roter, blauer, grüner, gelber, lila, oranger
+  // Neuter: rotes, blaues, grünes, gelbes, lila, oranges
+  // Feminine: rote, blaue, grüne, gelbe, lila, orange
+  // Some colors (lila, orange) don't change
+  
+  let colorAdjective = colorName;
+  
+  // Determine gender and adjust adjective ending
+  if (shape.type === 'circle' || shape.type === 'star') {
+    // Masculine: Kreis, Stern
+    if (colorName === 'rot') colorAdjective = 'roter';
+    else if (colorName === 'blau') colorAdjective = 'blauer';
+    else if (colorName === 'grün') colorAdjective = 'grüner';
+    else if (colorName === 'gelb') colorAdjective = 'gelber';
+    // lila and orange stay the same
+  } else if (shape.type === 'square' || shape.type === 'triangle' || shape.type === 'heart') {
+    // Neuter: Quadrat, Dreieck, Herz
+    if (colorName === 'rot') colorAdjective = 'rotes';
+    else if (colorName === 'blau') colorAdjective = 'blaues';
+    else if (colorName === 'grün') colorAdjective = 'grünes';
+    else if (colorName === 'gelb') colorAdjective = 'gelbes';
+    // lila and orange stay the same
+  } else {
+    // Feminine: Raute
+    if (colorName === 'rot') colorAdjective = 'rote';
+    else if (colorName === 'blau') colorAdjective = 'blaue';
+    else if (colorName === 'grün') colorAdjective = 'grüne';
+    else if (colorName === 'gelb') colorAdjective = 'gelbe';
+    // lila and orange stay the same
+  }
+  
+  return `${colorAdjective} ${shapeName}`;
+};
 
 export const createRandomShape = (): Shape => ({
   type: SHAPES[Math.floor(Math.random() * SHAPES.length)],

@@ -1,5 +1,6 @@
 import React from 'react';
-import { ShapeType, ShapeColor } from '@/types/game';
+import { ShapeType, ShapeColor, Shape } from '@/types/game';
+import { getShapeDescription, getShapeName } from '@/lib/shapeGameUtils';
 
 interface InlineShapeProps {
   type: ShapeType;
@@ -127,6 +128,10 @@ export const InlineShape: React.FC<InlineShapeProps> = ({
 }) => {
   const shapeColor = color && colorValues[color] ? colorValues[color] : '#6b7280';
   
+  // Create shape object for description
+  const shape: Shape | null = color ? { type, color } : null;
+  const ariaLabel = shape ? getShapeDescription(shape) : getShapeName(type);
+  
   return (
     <svg
       width={size}
@@ -134,7 +139,11 @@ export const InlineShape: React.FC<InlineShapeProps> = ({
       viewBox={`0 0 ${size} ${size}`}
       className="inline-block align-middle mx-1"
       style={{ verticalAlign: 'middle' }}
+      role="img"
+      aria-label={ariaLabel}
+      aria-hidden="false"
     >
+      <title>{ariaLabel}</title>
       {renderInlineShape(type, shapeColor, size)}
     </svg>
   );

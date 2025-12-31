@@ -11,6 +11,7 @@ import { useShapeGameLogic } from '@/hooks/useShapeGameLogic';
 import { useSpeech } from '@/hooks/useSpeech';
 import { getAgeFromStorage, saveAgeToStorage } from '@/lib/ageUtils';
 import { loadAllCustomAssets } from '@/lib/assetStorage';
+import { getShapeDescription } from '@/lib/shapeGameUtils';
 import { AgeRange, Shape } from '@/types/game';
 
 const ShapeGame: React.FC = () => {
@@ -78,14 +79,18 @@ const ShapeGame: React.FC = () => {
     if (currentChallenge && feedback === 'none') {
       // Build the full question text including shape and suffix
       let questionText = currentChallenge.question;
+      
+      // If there's a shape in the question, add its description
       if (currentChallenge.questionShape) {
-        // For questions with shapes, we can't easily describe the shape in speech
-        // So we'll just speak the question text
-        questionText = currentChallenge.question;
+        const shapeDescription = getShapeDescription(currentChallenge.questionShape);
+        questionText += ' ' + shapeDescription;
       }
+      
+      // Add suffix if present
       if (currentChallenge.questionSuffix) {
         questionText += ' ' + currentChallenge.questionSuffix;
       }
+      
       speakQuestion(questionText);
     }
   }, [currentChallenge, speakQuestion, feedback]);
@@ -182,7 +187,7 @@ const ShapeGame: React.FC = () => {
                 <InlineShape 
                   type={currentChallenge.questionShape.type} 
                   color={currentChallenge.questionShape.color}
-                  size={40}
+                  size={60}
                 />
               )}
               {currentChallenge.questionSuffix && (
@@ -237,7 +242,7 @@ const ShapeGame: React.FC = () => {
                 <InlineShape 
                   type={currentChallenge.questionShape.type} 
                   color={currentChallenge.questionShape.color}
-                  size={40}
+                  size={60}
                 />
               )}
               {currentChallenge.questionSuffix && (
@@ -312,7 +317,7 @@ const ShapeGame: React.FC = () => {
                 <InlineShape 
                   type={currentChallenge.questionShape.type} 
                   color={currentChallenge.questionShape.color}
-                  size={40}
+                  size={60}
                 />
               )}
               {currentChallenge.questionSuffix && (

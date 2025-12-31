@@ -15,6 +15,50 @@ import { getAgeFromStorage, saveAgeToStorage } from '@/lib/ageUtils';
 import { loadAllCustomAssets } from '@/lib/assetStorage';
 import { AgeRange } from '@/types/game';
 
+// Convert numbers to German words for better speech synthesis
+const numberToGerman = (num: number): string => {
+  const numbers: Record<number, string> = {
+    0: 'null',
+    1: 'eins',
+    2: 'zwei',
+    3: 'drei',
+    4: 'vier',
+    5: 'fünf',
+    6: 'sechs',
+    7: 'sieben',
+    8: 'acht',
+    9: 'neun',
+    10: 'zehn',
+    11: 'elf',
+    12: 'zwölf',
+    13: 'dreizehn',
+    14: 'vierzehn',
+    15: 'fünfzehn',
+    16: 'sechzehn',
+    17: 'siebzehn',
+    18: 'achtzehn',
+    19: 'neunzehn',
+    20: 'zwanzig',
+    21: 'einundzwanzig',
+    22: 'zweiundzwanzig',
+    23: 'dreiundzwanzig',
+    24: 'vierundzwanzig',
+    25: 'fünfundzwanzig',
+    26: 'sechsundzwanzig',
+    27: 'siebenundzwanzig',
+    28: 'achtundzwanzig',
+    29: 'neunundzwanzig',
+    30: 'dreißig',
+  };
+  
+  if (numbers[num] !== undefined) {
+    return numbers[num];
+  }
+  
+  // For numbers beyond 30, fall back to digit reading
+  return num.toString();
+};
+
 const MathGame: React.FC = () => {
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -90,7 +134,9 @@ const MathGame: React.FC = () => {
   useEffect(() => {
     if (currentProblem && feedback === 'none') {
       const operatorText = currentProblem.operator === '+' ? 'plus' : 'minus';
-      const questionText = `Was ist ${currentProblem.num1} ${operatorText} ${currentProblem.num2}?`;
+      const num1Text = numberToGerman(currentProblem.num1);
+      const num2Text = numberToGerman(currentProblem.num2);
+      const questionText = `${num1Text} ${operatorText} ${num2Text}`;
       speakQuestion(questionText);
     }
   }, [currentProblem, speakQuestion, feedback]);

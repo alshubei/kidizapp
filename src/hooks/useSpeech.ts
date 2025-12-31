@@ -85,6 +85,11 @@ export const useSpeech = (customAudio?: CustomAudio) => {
     speak(phrase);
   }, [speak, isMuted, customAudio]);
 
+  const speakQuestion = useCallback((text: string) => {
+    if (isMuted) return;
+    speak(text);
+  }, [speak, isMuted]);
+
   const toggleMute = useCallback(() => {
     setIsMuted(prev => !prev);
   }, []);
@@ -94,6 +99,7 @@ export const useSpeech = (customAudio?: CustomAudio) => {
     toggleMute,
     speakCorrect,
     speakWrong,
+    speakQuestion,
     speak,
   };
 };

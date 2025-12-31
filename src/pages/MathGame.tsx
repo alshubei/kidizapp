@@ -83,8 +83,17 @@ const MathGame: React.FC = () => {
     }
   }, [childAge, updateAge]);
 
-  const { isMuted, toggleMute, speakCorrect, speakWrong } = useSpeech(customAudio);
+  const { isMuted, toggleMute, speakCorrect, speakWrong, speakQuestion } = useSpeech(customAudio);
   const { recognizeDigit, isRecognizing } = useHandwritingRecognition();
+
+  // Speak the math problem when it changes
+  useEffect(() => {
+    if (currentProblem && feedback === 'none') {
+      const operatorText = currentProblem.operator === '+' ? 'plus' : 'minus';
+      const questionText = `Was ist ${currentProblem.num1} ${operatorText} ${currentProblem.num2}?`;
+      speakQuestion(questionText);
+    }
+  }, [currentProblem, speakQuestion, feedback]);
 
   // Trigger confetti on 3-streak
   useEffect(() => {

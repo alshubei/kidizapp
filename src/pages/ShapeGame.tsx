@@ -71,7 +71,24 @@ const ShapeGame: React.FC = () => {
     hasPrevious,
   } = useShapeGameLogic(childAge || 5);
 
-  const { isMuted, toggleMute, speakCorrect, speakWrong } = useSpeech(customAudio);
+  const { isMuted, toggleMute, speakCorrect, speakWrong, speakQuestion } = useSpeech(customAudio);
+
+  // Speak the question when it changes
+  useEffect(() => {
+    if (currentChallenge && feedback === 'none') {
+      // Build the full question text including shape and suffix
+      let questionText = currentChallenge.question;
+      if (currentChallenge.questionShape) {
+        // For questions with shapes, we can't easily describe the shape in speech
+        // So we'll just speak the question text
+        questionText = currentChallenge.question;
+      }
+      if (currentChallenge.questionSuffix) {
+        questionText += ' ' + currentChallenge.questionSuffix;
+      }
+      speakQuestion(questionText);
+    }
+  }, [currentChallenge, speakQuestion, feedback]);
 
   // Trigger confetti on 3-streak
   useEffect(() => {

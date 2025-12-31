@@ -34,7 +34,7 @@ const MathGame: React.FC = () => {
   useEffect(() => {
     const storedAge = getAgeFromStorage();
     if (storedAge) {
-      if (storedAge < 7) {
+      if (storedAge < 6) {
         // Wrong game for this age, redirect to shape game
         navigate('/game/shape', { replace: true });
         return;
@@ -74,7 +74,7 @@ const MathGame: React.FC = () => {
     setProcessing,
     updateAge,
     hasPrevious,
-  } = useGameLogic(childAge || 7); // Default to 7 if age not set yet (math game is for 7-10)
+  } = useGameLogic(childAge || 6); // Default to 6 if age not set yet (math game is for 6-10)
 
   // Update game logic when age changes
   useEffect(() => {
@@ -205,7 +205,7 @@ const MathGame: React.FC = () => {
       updateAge(ageRange);
     }
     // Navigate to appropriate game based on new age
-    if (ageRange >= 7) {
+    if (ageRange >= 6) {
       navigate('/game/math', { replace: true });
     } else {
       navigate('/game/shape', { replace: true });

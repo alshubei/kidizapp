@@ -5,13 +5,35 @@ import { getAgeConstraints } from '@/lib/ageUtils';
 const generateProblem = (age: AgeRange): MathProblem => {
   const constraints = getAgeConstraints(age);
   
-  const operator = constraints.allowSubtraction && Math.random() > 0.5 ? '-' : '+';
+  // Adjust subtraction probability based on age (younger = less subtraction)
+  let subtractionProbability = 0;
+  if (age === 8) {
+    subtractionProbability = 0.3; // 30% chance for age 8
+  } else if (age === 9) {
+    subtractionProbability = 0.4; // 40% chance for age 9
+  } else if (age === 10) {
+    subtractionProbability = 0.5; // 50% chance for age 10
+  }
+  
+  const operator = constraints.allowSubtraction && Math.random() < subtractionProbability ? '-' : '+';
   let num1 = Math.floor(Math.random() * constraints.max1) + 1;
   let num2 = Math.floor(Math.random() * constraints.max2) + 1;
 
   // Ensure subtraction doesn't result in negative numbers
   if (operator === '-' && num2 > num1) {
     [num1, num2] = [num2, num1];
+  }
+
+  // For addition, ensure answer doesn't exceed maxAnswer
+  if (operator === '+') {
+    const answer = num1 + num2;
+    if (answer > constraints.maxAnswer) {
+      // Reduce numbers to fit within maxAnswer
+      const maxNum1 = Math.min(num1, constraints.maxAnswer - 1);
+      const maxNum2 = constraints.maxAnswer - maxNum1;
+      num1 = Math.floor(Math.random() * maxNum1) + 1;
+      num2 = Math.floor(Math.random() * Math.min(maxNum2, constraints.max2)) + 1;
+    }
   }
 
   const answer = operator === '+' ? num1 + num2 : num1 - num2;

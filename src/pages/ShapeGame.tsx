@@ -31,7 +31,7 @@ const ShapeGame: React.FC = () => {
   useEffect(() => {
     const storedAge = getAgeFromStorage();
     if (storedAge) {
-      if (storedAge >= 7) {
+      if (storedAge >= 6) {
         // Wrong game for this age, redirect to math game
         navigate('/game/math', { replace: true });
         return;
@@ -141,7 +141,7 @@ const ShapeGame: React.FC = () => {
       updateAge(ageRange);
     }
     // Navigate to appropriate game based on new age
-    if (ageRange >= 7) {
+    if (ageRange >= 6) {
       navigate('/game/math', { replace: true });
     } else {
       navigate('/game/shape', { replace: true });

@@ -32,11 +32,11 @@ export const GameRouter: React.FC = () => {
   }
 
   // Route to appropriate game based on age
-  if (childAge >= 7) {
-    // Ages 7-10: Math game
+  if (childAge >= 6) {
+    // Ages 6-10: Math game
     return <MathGame />;
   } else {
-    // Ages 3-6: Shape game
+    // Ages 3-5: Shape game
     return <ShapeGame />;
   }
 };

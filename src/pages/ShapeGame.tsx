@@ -208,16 +208,32 @@ const ShapeGame: React.FC = () => {
             </h2>
           </div>
           
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 max-w-2xl mx-auto mb-6">
-            {currentChallenge.shapes.map((shape, index) => (
-              <ShapeDisplay
-                key={index}
-                shape={shape}
-                size="md"
-              />
-            ))}
+          {/* Shapes display area - clearly non-interactive */}
+          <div className="bg-card/30 rounded-3xl p-6 border-2 border-dashed border-muted-foreground/30 mb-8">
+            <p className="text-center text-sm text-muted-foreground mb-4 font-medium">
+              👆 Zähle die Formen oben
+            </p>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 max-w-2xl mx-auto">
+              {currentChallenge.shapes.map((shape, index) => (
+                <div key={index} className="opacity-75 pointer-events-none">
+                  <ShapeDisplay
+                    shape={shape}
+                    size="md"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
           
+          {/* Visual separator with arrow pointing to answer buttons */}
+          <div className="flex flex-col items-center gap-3 mb-4">
+            <div className="text-4xl animate-bounce">👇</div>
+            <p className="text-lg sm:text-xl font-bold text-foreground">
+              Klicke auf die richtige Zahl:
+            </p>
+          </div>
+          
+          {/* Number buttons - made more prominent and clearly interactive */}
           <div className="flex flex-wrap justify-center gap-4">
             {currentChallenge.options?.map((option) => {
               const num = option as number;
@@ -230,13 +246,14 @@ const ShapeGame: React.FC = () => {
                   key={num}
                   onClick={() => handleAnswer(num)}
                   className={`
-                    w-20 h-20 rounded-2xl font-bold text-3xl
+                    w-24 h-24 sm:w-28 sm:h-28 rounded-3xl font-bold text-4xl sm:text-5xl
                     transition-all duration-200
-                    ${isSelected && isCorrect ? 'bg-success text-white ring-4 ring-success scale-110' : ''}
-                    ${isSelected && isWrong ? 'bg-destructive text-white ring-4 ring-destructive animate-shake' : ''}
-                    ${!isSelected ? 'bg-card text-foreground hover:bg-muted hover:scale-105' : ''}
-                    ${isSelected && !isCorrect && !isWrong ? 'bg-btn-blue text-white ring-4 ring-btn-blue scale-110' : ''}
-                    shadow-fun-sm
+                    ${isSelected && isCorrect ? 'bg-success text-white ring-4 ring-success scale-110 shadow-2xl' : ''}
+                    ${isSelected && isWrong ? 'bg-destructive text-white ring-4 ring-destructive animate-shake shadow-2xl' : ''}
+                    ${!isSelected ? 'bg-btn-blue text-white hover:bg-btn-blue/90 hover:scale-110 active:scale-95 shadow-fun-lg ring-2 ring-btn-blue/50' : ''}
+                    ${isSelected && !isCorrect && !isWrong ? 'bg-btn-blue text-white ring-4 ring-btn-blue scale-110 shadow-2xl' : ''}
+                    cursor-pointer
+                    transform
                   `}
                 >
                   {num}

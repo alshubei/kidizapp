@@ -143,23 +143,39 @@ export const generateShapeChallenge = (age: AgeRange): ShapeChallenge => {
     } else {
       // color-match
       const targetColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+      const otherColors = COLORS.filter(c => c !== targetColor);
       const shapes: Shape[] = [];
+      
       // Create one shape with target color (this is the correct answer)
       const correctShape: Shape = { 
         type: SHAPES[Math.floor(Math.random() * SHAPES.length)], 
         color: targetColor 
       };
       shapes.push(correctShape);
-      // Add other shapes with different colors
-      const otherShapes = createShapes(5);
-      // Ensure other shapes don't have the target color
-      otherShapes.forEach(shape => {
-        if (shape.color === targetColor) {
-          const otherColors = COLORS.filter(c => c !== targetColor);
-          shape.color = otherColors[Math.floor(Math.random() * otherColors.length)];
-        }
-      });
-      shapes.push(...otherShapes);
+      
+      // Create other shapes, ensuring they all have different colors (not the target color)
+      // Use a set to track used colors to ensure variety
+      const usedColors = new Set<ShapeColor>([targetColor]);
+      for (let i = 0; i < 5; i++) {
+        // Get available colors (not target, and try to avoid duplicates)
+        const availableColors = otherColors.filter(c => !usedColors.has(c) || usedColors.size >= otherColors.length);
+        const otherColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+        const otherShape: Shape = {
+          type: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+          color: otherColor
+        };
+        shapes.push(otherShape);
+        usedColors.add(otherColor);
+      }
+      
+      // Verify exactly one shape has the target color
+      const shapesWithTargetColor = shapes.filter(s => s.color === targetColor);
+      if (shapesWithTargetColor.length !== 1) {
+        // If somehow we have more or less than one, regenerate
+        console.warn('Color-match challenge has incorrect number of target color shapes, regenerating...');
+        return generateShapeChallenge(age);
+      }
+      
       shapes.sort(() => Math.random() - 0.5);
       
       return {

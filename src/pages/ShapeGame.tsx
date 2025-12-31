@@ -48,8 +48,10 @@ const ShapeGame: React.FC = () => {
     feedback,
     checkAnswer,
     nextChallenge,
+    prevChallenge,
     retry,
     updateAge,
+    hasPrevious,
   } = useShapeGameLogic(childAge || 5);
 
   const { isMuted, toggleMute, speakCorrect, speakWrong } = useSpeech(customAudio);
@@ -90,6 +92,11 @@ const ShapeGame: React.FC = () => {
     nextChallenge();
     setSelectedAnswer(null);
   }, [nextChallenge]);
+
+  const handlePrev = useCallback(() => {
+    prevChallenge();
+    setSelectedAnswer(null);
+  }, [prevChallenge]);
 
   const handleRetry = useCallback(() => {
     retry();
@@ -285,6 +292,36 @@ const ShapeGame: React.FC = () => {
         <div className="mb-6">
           {renderGameContent()}
         </div>
+
+        {/* Navigation Buttons */}
+        {feedback === 'none' && (
+          <div className="flex justify-center gap-4 mt-6">
+            <button
+              onClick={handlePrev}
+              disabled={!hasPrevious}
+              className={`
+                btn-bounce bg-btn-purple text-white font-bold 
+                py-3 sm:py-4 px-6 sm:px-8 rounded-2xl 
+                text-lg sm:text-xl shadow-fun transition-all
+                disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+                flex items-center justify-center gap-2
+              `}
+            >
+              ⬅️ Zurück
+            </button>
+            <button
+              onClick={handleNext}
+              className={`
+                btn-bounce bg-btn-blue text-white font-bold 
+                py-3 sm:py-4 px-6 sm:px-8 rounded-2xl 
+                text-lg sm:text-xl shadow-fun transition-all
+                flex items-center justify-center gap-2
+              `}
+            >
+              Weiter ➡️
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Feedback Overlay */}

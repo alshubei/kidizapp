@@ -34,9 +34,14 @@ export const ShapeDisplay: React.FC<ShapeDisplayProps> = ({
   isCorrect = false,
   isWrong = false,
 }) => {
+  // Ensure shape has a valid color
+  if (!shape?.color || !colorClasses[shape.color]) {
+    console.error('ShapeDisplay: Invalid or missing color:', shape);
+  }
+  
   const baseClasses = `
     ${sizeClasses[size]}
-    ${colorClasses[shape.color]}
+    ${colorClasses[shape?.color] || 'text-gray-400'}
     flex items-center justify-center
     rounded-2xl
     transition-all duration-200

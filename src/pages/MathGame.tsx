@@ -53,9 +53,11 @@ const MathGame: React.FC = () => {
     isProcessing,
     checkAnswer,
     nextProblem,
+    prevProblem,
     retry,
     setProcessing,
     updateAge,
+    hasPrevious,
   } = useGameLogic(childAge || 7); // Default to 7 if age not set yet (math game is for 7-10)
 
   // Update game logic when age changes
@@ -114,6 +116,18 @@ const MathGame: React.FC = () => {
     }
     setLastAnswer(null);
   }, [nextProblem]);
+
+  const handlePrev = useCallback(() => {
+    prevProblem();
+    // Clear the canvas
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (ctx && canvas) {
+      ctx.fillStyle = '#1a3a1a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    setLastAnswer(null);
+  }, [prevProblem]);
 
   const handleRetry = useCallback(() => {
     retry();
@@ -219,7 +233,7 @@ const MathGame: React.FC = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="flex justify-center">
+        <div className="flex justify-center mb-6">
           <GameButton
             variant="check"
             onClick={handleCheck}
@@ -227,6 +241,36 @@ const MathGame: React.FC = () => {
             isLoading={isProcessing || isRecognizing}
           />
         </div>
+
+        {/* Navigation Buttons */}
+        {feedback === 'none' && (
+          <div className="flex justify-center gap-4 mb-6">
+            <button
+              onClick={handlePrev}
+              disabled={!hasPrevious}
+              className={`
+                btn-bounce bg-btn-purple text-white font-bold 
+                py-3 sm:py-4 px-6 sm:px-8 rounded-2xl 
+                text-lg sm:text-xl shadow-fun transition-all
+                disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+                flex items-center justify-center gap-2
+              `}
+            >
+              ⬅️ Zurück
+            </button>
+            <button
+              onClick={handleNext}
+              className={`
+                btn-bounce bg-btn-blue text-white font-bold 
+                py-3 sm:py-4 px-6 sm:px-8 rounded-2xl 
+                text-lg sm:text-xl shadow-fun transition-all
+                flex items-center justify-center gap-2
+              `}
+            >
+              Weiter ➡️
+            </button>
+          </div>
+        )}
 
         {/* Footer hint */}
         <p className="text-center text-muted-foreground text-sm mt-8">

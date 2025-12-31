@@ -1,6 +1,6 @@
-# Mathe-Spaß 🧮
+# KidizApp 🎮
 
-Ein kinderfreundliches Mathe-Lernspiel mit Handschrifterkennung für Kinder von 5-10 Jahren.
+Ein kinderfreundliches Lernspiel für Kinder von 3-10 Jahren mit Formen-Spielen und Mathe-Aufgaben.
 
 ## Features
 

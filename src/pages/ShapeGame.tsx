@@ -20,6 +20,10 @@ const ShapeGame: React.FC = () => {
     correct: null,
     wrong: null,
   });
+  const [customAudio, setCustomAudio] = useState<{ correct: string | null; wrong: string | null }>({
+    correct: null,
+    wrong: null,
+  });
 
   // Load age from storage on mount
   useEffect(() => {
@@ -48,7 +52,7 @@ const ShapeGame: React.FC = () => {
     updateAge,
   } = useShapeGameLogic(childAge || 5);
 
-  const { isMuted, toggleMute, speakCorrect, speakWrong } = useSpeech();
+  const { isMuted, toggleMute, speakCorrect, speakWrong } = useSpeech(customAudio);
 
   // Trigger confetti on 3-streak
   useEffect(() => {
@@ -94,6 +98,10 @@ const ShapeGame: React.FC = () => {
 
   const handleImageChange = useCallback((type: 'correct' | 'wrong', image: string | null) => {
     setCustomImages(prev => ({ ...prev, [type]: image }));
+  }, []);
+
+  const handleAudioChange = useCallback((type: 'correct' | 'wrong', audio: string | null) => {
+    setCustomAudio(prev => ({ ...prev, [type]: audio }));
   }, []);
 
   const handleAgeChange = useCallback((age: number) => {
@@ -285,6 +293,8 @@ const ShapeGame: React.FC = () => {
         onClose={() => setShowSettings(false)}
         customImages={customImages}
         onImageChange={handleImageChange}
+        customAudio={customAudio}
+        onAudioChange={handleAudioChange}
         currentAge={childAge}
         onAgeChange={handleAgeChange}
       />

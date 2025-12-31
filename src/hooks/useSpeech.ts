@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { playAudio } from '@/lib/audioUtils';
 
 const correctPhrases = [
   "Super gemacht!",
@@ -17,7 +18,12 @@ const wrongPhrases = [
   "Du kannst das! Versuch es noch einmal!",
 ];
 
-export const useSpeech = () => {
+interface CustomAudio {
+  correct: string | null;
+  wrong: string | null;
+}
+
+export const useSpeech = (customAudio?: CustomAudio) => {
   const [isMuted, setIsMuted] = useState(true);
 
   const speak = useCallback((text: string) => {
@@ -41,15 +47,43 @@ export const useSpeech = () => {
     window.speechSynthesis.speak(utterance);
   }, [isMuted]);
 
-  const speakCorrect = useCallback(() => {
+  const speakCorrect = useCallback(async () => {
+    if (isMuted) return;
+    
+    // Play custom audio if available
+    if (customAudio?.correct) {
+      try {
+        await playAudio(customAudio.correct);
+        return;
+      } catch (error) {
+        console.error('Error playing custom audio:', error);
+        // Fall back to text-to-speech
+      }
+    }
+    
+    // Fall back to text-to-speech
     const phrase = correctPhrases[Math.floor(Math.random() * correctPhrases.length)];
     speak(phrase);
-  }, [speak]);
+  }, [speak, isMuted, customAudio]);
 
-  const speakWrong = useCallback(() => {
+  const speakWrong = useCallback(async () => {
+    if (isMuted) return;
+    
+    // Play custom audio if available
+    if (customAudio?.wrong) {
+      try {
+        await playAudio(customAudio.wrong);
+        return;
+      } catch (error) {
+        console.error('Error playing custom audio:', error);
+        // Fall back to text-to-speech
+      }
+    }
+    
+    // Fall back to text-to-speech
     const phrase = wrongPhrases[Math.floor(Math.random() * wrongPhrases.length)];
     speak(phrase);
-  }, [speak]);
+  }, [speak, isMuted, customAudio]);
 
   const toggleMute = useCallback(() => {
     setIsMuted(prev => !prev);

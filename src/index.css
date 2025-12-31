@@ -179,6 +179,130 @@
     animation: float 3s ease-in-out infinite;
   }
 
+  @keyframes slide-cover {
+    0% {
+      clip-path: circle(0% at 50% 50%);
+    }
+    100% {
+      clip-path: circle(150% at 50% 50%);
+    }
+  }
+
+  @keyframes pop-in-correct {
+    0% {
+      transform: scale(0) rotate(-180deg);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.1) rotate(10deg);
+    }
+    70% {
+      transform: scale(0.95) rotate(-5deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  @keyframes pop-in-wrong {
+    0% {
+      transform: scale(0) translateY(-100px);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.1) translateY(10px);
+    }
+    70% {
+      transform: scale(0.95) translateY(-5px);
+    }
+    100% {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes bounce-in-rotate {
+    0% {
+      transform: scale(0) rotate(-360deg);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(1.2) rotate(20deg);
+    }
+    80% {
+      transform: scale(0.9) rotate(-10deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  @keyframes wobble {
+    0%, 100% {
+      transform: translateX(0) rotate(0deg);
+    }
+    25% {
+      transform: translateX(-10px) rotate(-5deg);
+    }
+    75% {
+      transform: translateX(10px) rotate(5deg);
+    }
+  }
+
+  @keyframes scale-bounce {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+  }
+
+  @keyframes pulse-slow {
+    0%, 100% {
+      opacity: 0.3;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.1);
+    }
+  }
+
+  .animate-slide-cover {
+    animation: slide-cover 0.8s ease-out forwards;
+  }
+
+  .animate-pop-in-correct {
+    animation: pop-in-correct 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  }
+
+  .animate-pop-in-wrong {
+    animation: pop-in-wrong 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  }
+
+  .animate-bounce-in-rotate {
+    animation: bounce-in-rotate 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  }
+
+  .animate-wobble {
+    animation: wobble 0.6s ease-in-out;
+  }
+
+  .animate-scale-bounce {
+    animation: scale-bounce 1s ease-in-out infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse-slow 3s ease-in-out infinite;
+  }
+
+  .animation-delay-1000 {
+    animation-delay: 1s;
+  }
+
   .gradient-warm {
     background: linear-gradient(
       135deg,

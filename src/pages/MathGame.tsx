@@ -23,6 +23,10 @@ const MathGame: React.FC = () => {
     correct: null,
     wrong: null,
   });
+  const [customAudio, setCustomAudio] = useState<{ correct: string | null; wrong: string | null }>({
+    correct: null,
+    wrong: null,
+  });
   const [lastAnswer, setLastAnswer] = useState<number | null>(null);
 
   // Load age from storage on mount
@@ -61,7 +65,7 @@ const MathGame: React.FC = () => {
     }
   }, [childAge, updateAge]);
 
-  const { isMuted, toggleMute, speakCorrect, speakWrong } = useSpeech();
+  const { isMuted, toggleMute, speakCorrect, speakWrong } = useSpeech(customAudio);
   const { recognizeDigit, isRecognizing } = useHandwritingRecognition();
 
   // Trigger confetti on 3-streak
@@ -125,6 +129,10 @@ const MathGame: React.FC = () => {
 
   const handleImageChange = useCallback((type: 'correct' | 'wrong', image: string | null) => {
     setCustomImages(prev => ({ ...prev, [type]: image }));
+  }, []);
+
+  const handleAudioChange = useCallback((type: 'correct' | 'wrong', audio: string | null) => {
+    setCustomAudio(prev => ({ ...prev, [type]: audio }));
   }, []);
 
   const handleClearCanvas = useCallback(() => {
@@ -232,6 +240,8 @@ const MathGame: React.FC = () => {
         onClose={() => setShowSettings(false)}
         customImages={customImages}
         onImageChange={handleImageChange}
+        customAudio={customAudio}
+        onAudioChange={handleAudioChange}
         currentAge={childAge}
         onAgeChange={handleAgeChange}
       />

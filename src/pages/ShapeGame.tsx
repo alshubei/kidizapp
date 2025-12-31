@@ -6,6 +6,7 @@ import { SoundToggle } from '@/components/SoundToggle';
 import { ParentSettings } from '@/components/ParentSettings';
 import { FeedbackDisplay } from '@/components/FeedbackDisplay';
 import { ShapeDisplay } from '@/components/ShapeDisplay';
+import { InlineShape } from '@/components/InlineShape';
 import { useShapeGameLogic } from '@/hooks/useShapeGameLogic';
 import { useSpeech } from '@/hooks/useSpeech';
 import { getAgeFromStorage, saveAgeToStorage } from '@/lib/ageUtils';
@@ -137,14 +138,36 @@ const ShapeGame: React.FC = () => {
       return (
         <div className="space-y-6">
           <div className="text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
-              {currentChallenge.question}
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 flex items-center justify-center gap-2 flex-wrap">
+              <span>{currentChallenge.question}</span>
+              {currentChallenge.questionShape && (
+                <InlineShape 
+                  type={currentChallenge.questionShape.type} 
+                  color={currentChallenge.questionShape.color}
+                  size={40}
+                />
+              )}
+              {currentChallenge.questionSuffix && (
+                <span>{currentChallenge.questionSuffix}</span>
+              )}
             </h2>
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
             {currentChallenge.options?.map((option, index) => {
               const shape = option as Shape;
+              
+              // Debug: Log shapes for color-match challenges
+              if (currentChallenge.type === 'color-match' && index === 0) {
+                console.log('Color-match challenge shapes:', currentChallenge.options?.map((s: any) => ({ type: s.type, color: s.color })));
+                console.log('Target color:', currentChallenge.correctAnswer);
+              }
+              
+              // Ensure shape is valid
+              if (!shape || !shape.type || !shape.color) {
+                console.error('Invalid shape in options:', shape, 'at index:', index);
+              }
+              
               const isSelected = selectedAnswer !== null && 
                 JSON.stringify(selectedAnswer) === JSON.stringify(option);
               const isCorrect = feedback === 'correct' && isSelected;
@@ -170,8 +193,18 @@ const ShapeGame: React.FC = () => {
       return (
         <div className="space-y-6">
           <div className="text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
-              {currentChallenge.question}
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 flex items-center justify-center gap-2 flex-wrap">
+              <span>{currentChallenge.question}</span>
+              {currentChallenge.questionShape && (
+                <InlineShape 
+                  type={currentChallenge.questionShape.type} 
+                  color={currentChallenge.questionShape.color}
+                  size={40}
+                />
+              )}
+              {currentChallenge.questionSuffix && (
+                <span>{currentChallenge.questionSuffix}</span>
+              )}
             </h2>
           </div>
           
@@ -218,8 +251,18 @@ const ShapeGame: React.FC = () => {
       return (
         <div className="space-y-6">
           <div className="text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
-              {currentChallenge.question}
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 flex items-center justify-center gap-2 flex-wrap">
+              <span>{currentChallenge.question}</span>
+              {currentChallenge.questionShape && (
+                <InlineShape 
+                  type={currentChallenge.questionShape.type} 
+                  color={currentChallenge.questionShape.color}
+                  size={40}
+                />
+              )}
+              {currentChallenge.questionSuffix && (
+                <span>{currentChallenge.questionSuffix}</span>
+              )}
             </h2>
           </div>
           

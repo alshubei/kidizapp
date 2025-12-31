@@ -1,20 +1,11 @@
 import React from 'react';
-import { Shape, ShapeType } from '@/types/game';
+import { ShapeType, ShapeColor } from '@/types/game';
 
-interface ShapeDisplayProps {
-  shape: Shape;
-  size?: 'sm' | 'md' | 'lg';
-  onClick?: () => void;
-  isSelected?: boolean;
-  isCorrect?: boolean;
-  isWrong?: boolean;
+interface InlineShapeProps {
+  type: ShapeType;
+  color?: ShapeColor;
+  size?: number;
 }
-
-const sizeClasses = {
-  sm: 'w-16 h-16',
-  md: 'w-24 h-24',
-  lg: 'w-32 h-32',
-};
 
 const colorValues: Record<string, string> = {
   red: '#ef4444',
@@ -25,10 +16,10 @@ const colorValues: Record<string, string> = {
   orange: '#f97316',
 };
 
-// SVG shape renderer
-const renderShape = (type: ShapeType, color: string, size: number) => {
+// Render a small inline SVG shape
+const renderInlineShape = (type: ShapeType, color: string, size: number) => {
   const center = size / 2;
-  const strokeWidth = Math.max(2, size / 16);
+  const strokeWidth = Math.max(1, size / 20);
   
   switch (type) {
     case 'circle':
@@ -93,10 +84,8 @@ const renderShape = (type: ShapeType, color: string, size: number) => {
         />
       );
     case 'heart':
-      // Heart shape using path - simplified and more accurate
       const heartSize = center - strokeWidth;
       const heartTop = center - heartSize * 0.2;
-      const heartBottom = center + heartSize * 0.8;
       return (
         <path
           d={`M ${center} ${heartTop}
@@ -131,49 +120,23 @@ const renderShape = (type: ShapeType, color: string, size: number) => {
   }
 };
 
-export const ShapeDisplay: React.FC<ShapeDisplayProps> = ({
-  shape,
-  size = 'md',
-  onClick,
-  isSelected = false,
-  isCorrect = false,
-  isWrong = false,
+export const InlineShape: React.FC<InlineShapeProps> = ({ 
+  type, 
+  color, 
+  size = 32 
 }) => {
-  // Ensure shape has a valid color
-  if (!shape || !shape.color || !colorValues[shape.color]) {
-    console.error('ShapeDisplay: Invalid or missing color:', shape);
-    console.error('Shape type:', shape?.type, 'Shape color:', shape?.color);
-  }
+  const shapeColor = color && colorValues[color] ? colorValues[color] : '#6b7280';
   
-  // Get the color value, default to gray if invalid
-  const color = shape?.color && colorValues[shape.color] 
-    ? colorValues[shape.color] 
-    : '#9ca3af';
-  
-  const sizeValue = size === 'sm' ? 64 : size === 'md' ? 96 : 128;
-  
-  const baseClasses = `
-    ${sizeClasses[size]}
-    flex items-center justify-center
-    rounded-2xl
-    transition-all duration-200
-    ${onClick ? 'cursor-pointer hover:scale-110 active:scale-95' : ''}
-    ${isSelected ? 'ring-4 ring-btn-green scale-110' : ''}
-    ${isCorrect ? 'ring-4 ring-success scale-110 animate-bounce-in' : ''}
-    ${isWrong ? 'ring-4 ring-destructive animate-shake' : ''}
-  `;
-
   return (
-    <div className={baseClasses} onClick={onClick}>
-      <svg
-        width={sizeValue}
-        height={sizeValue}
-        viewBox={`0 0 ${sizeValue} ${sizeValue}`}
-        className="drop-shadow-lg"
-      >
-        {renderShape(shape?.type || 'circle', color, sizeValue)}
-      </svg>
-    </div>
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      className="inline-block align-middle mx-1"
+      style={{ verticalAlign: 'middle' }}
+    >
+      {renderInlineShape(type, shapeColor, size)}
+    </svg>
   );
 };
 

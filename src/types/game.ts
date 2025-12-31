@@ -42,6 +42,8 @@ export interface ShapeGameState {
 export interface ShapeChallenge {
   type: ShapeGameType;
   question: string;
+  questionShape?: Shape; // Shape to display inline in question text
+  questionSuffix?: string; // Optional suffix text after the shape (e.g., "siehst du?")
   shapes: Shape[];
   correctAnswer: number | Shape | string; // number for count, Shape for match/find, string for color-match
   options?: (number | Shape)[];

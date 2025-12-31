@@ -24,7 +24,7 @@ interface CustomAudio {
 }
 
 export const useSpeech = (customAudio?: CustomAudio) => {
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
 
   const speak = useCallback((text: string) => {
     if (isMuted || !('speechSynthesis' in window)) return;

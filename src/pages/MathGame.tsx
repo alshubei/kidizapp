@@ -166,9 +166,19 @@ const MathGame: React.FC = () => {
         <header className="flex items-center justify-between mb-6 sm:mb-8">
           <div className="flex items-center gap-3">
             <span className="text-3xl sm:text-4xl">🧮</span>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-              Mathe-Spaß
-            </h1>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+                Mathe-Spaß
+              </h1>
+              {childAge && (
+                <div className="flex items-center gap-1 bg-btn-purple/20 px-3 py-1 rounded-full">
+                  <span className="text-sm">👶</span>
+                  <span className="text-sm font-bold text-btn-purple">
+                    Alter: {childAge} Jahre
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <SoundToggle isMuted={isMuted} onToggle={toggleMute} />

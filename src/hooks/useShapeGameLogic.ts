@@ -22,8 +22,8 @@ export const useShapeGameLogic = (age: AgeRange) => {
     } else if (challenge.type === 'color-match') {
       // Color-match game: compare by color only
       const userShape = userAnswer as { type: string; color: string };
-      const correctShape = challenge.correctAnswer as { type: string; color: string };
-      isCorrect = userShape.color === correctShape.color;
+      const targetColor = challenge.correctAnswer as string; // correctAnswer is the target color string
+      isCorrect = userShape.color === targetColor;
     } else if (challenge.type === 'find') {
       // Find game: compare by type only (question asks to find by type, e.g., "Klicke auf das ⭐!")
       const userShape = userAnswer as { type: string; color: string };

@@ -43,6 +43,6 @@ export interface ShapeChallenge {
   type: ShapeGameType;
   question: string;
   shapes: Shape[];
-  correctAnswer: number | Shape;
+  correctAnswer: number | Shape | string; // number for count, Shape for match/find, string for color-match
   options?: (number | Shape)[];
 }

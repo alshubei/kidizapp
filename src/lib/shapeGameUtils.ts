@@ -166,7 +166,7 @@ export const generateShapeChallenge = (age: AgeRange): ShapeChallenge => {
         type: 'color-match',
         question: `Finde die ${getColorName(targetColor)}e Form!`,
         shapes,
-        correctAnswer: correctShape,
+        correctAnswer: targetColor, // Store the target color as the answer
         options: shapes,
       };
     }

@@ -1,27 +1,13 @@
 import { useState, useCallback } from 'react';
-import { MathProblem, GameState, Difficulty } from '@/types/game';
+import { MathProblem, GameState, AgeRange } from '@/types/game';
+import { getAgeConstraints } from '@/lib/ageUtils';
 
-const generateProblem = (difficulty: Difficulty): MathProblem => {
-  let max1: number, max2: number;
+const generateProblem = (age: AgeRange): MathProblem => {
+  const constraints = getAgeConstraints(age);
   
-  switch (difficulty) {
-    case 'easy':
-      max1 = 10;
-      max2 = 5;
-      break;
-    case 'medium':
-      max1 = 20;
-      max2 = 10;
-      break;
-    case 'hard':
-      max1 = 50;
-      max2 = 25;
-      break;
-  }
-
-  const operator = Math.random() > 0.5 ? '+' : '-';
-  let num1 = Math.floor(Math.random() * max1) + 1;
-  let num2 = Math.floor(Math.random() * max2) + 1;
+  const operator = constraints.allowSubtraction && Math.random() > 0.5 ? '-' : '+';
+  let num1 = Math.floor(Math.random() * constraints.max1) + 1;
+  let num2 = Math.floor(Math.random() * constraints.max2) + 1;
 
   // Ensure subtraction doesn't result in negative numbers
   if (operator === '-' && num2 > num1) {
@@ -33,11 +19,11 @@ const generateProblem = (difficulty: Difficulty): MathProblem => {
   return { num1, num2, operator, answer };
 };
 
-export const useGameLogic = (difficulty: Difficulty = 'easy') => {
+export const useGameLogic = (age: AgeRange) => {
   const [state, setState] = useState<GameState>({
     score: 0,
     streak: 0,
-    currentProblem: generateProblem(difficulty),
+    currentProblem: generateProblem(age),
     feedback: 'none',
     isProcessing: false,
   });
@@ -58,10 +44,10 @@ export const useGameLogic = (difficulty: Difficulty = 'easy') => {
   const nextProblem = useCallback(() => {
     setState(prev => ({
       ...prev,
-      currentProblem: generateProblem(difficulty),
+      currentProblem: generateProblem(age),
       feedback: 'none',
     }));
-  }, [difficulty]);
+  }, [age]);
 
   const retry = useCallback(() => {
     setState(prev => ({
@@ -78,11 +64,18 @@ export const useGameLogic = (difficulty: Difficulty = 'easy') => {
     setState({
       score: 0,
       streak: 0,
-      currentProblem: generateProblem(difficulty),
+      currentProblem: generateProblem(age),
       feedback: 'none',
       isProcessing: false,
     });
-  }, [difficulty]);
+  }, [age]);
+
+  const updateAge = useCallback((newAge: AgeRange) => {
+    setState(prev => ({
+      ...prev,
+      currentProblem: generateProblem(newAge),
+    }));
+  }, []);
 
   return {
     ...state,
@@ -91,5 +84,6 @@ export const useGameLogic = (difficulty: Difficulty = 'easy') => {
     retry,
     setProcessing,
     resetGame,
+    updateAge,
   };
 };

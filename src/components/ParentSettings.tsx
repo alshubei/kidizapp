@@ -8,6 +8,8 @@ interface ParentSettingsProps {
     wrong: string | null;
   };
   onImageChange: (type: 'correct' | 'wrong', image: string | null) => void;
+  currentAge: number | null;
+  onAgeChange: (age: number) => void;
 }
 
 export const ParentSettings: React.FC<ParentSettingsProps> = ({
@@ -15,10 +17,15 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
   onClose,
   customImages,
   onImageChange,
+  currentAge,
+  onAgeChange,
 }) => {
   const correctInputRef = useRef<HTMLInputElement>(null);
   const wrongInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<{ correct: string | null; wrong: string | null }>(customImages);
+  const [selectedAge, setSelectedAge] = useState<number | null>(currentAge);
+  
+  const ages: number[] = [3, 4, 5, 6, 7, 8, 9, 10];
 
   if (!isOpen) return null;
 
@@ -39,6 +46,9 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
   const handleSave = () => {
     onImageChange('correct', preview.correct);
     onImageChange('wrong', preview.wrong);
+    if (selectedAge !== null) {
+      onAgeChange(selectedAge);
+    }
     onClose();
   };
 
@@ -68,9 +78,35 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
         </div>
 
         <p className="text-muted-foreground mb-6 text-sm">
-          Hier kannst du eigene Bilder für das Feedback hochladen. 
-          Die Bilder erscheinen, wenn das Kind richtig oder falsch antwortet.
+          Hier kannst du das Alter deines Kindes ändern und eigene Bilder für das Feedback hochladen.
         </p>
+
+        {/* Age Selection */}
+        <div className="mb-6">
+          <label className="block font-bold text-foreground mb-3">
+            👶 Alter des Kindes (3-10 Jahre)
+          </label>
+          <div className="grid grid-cols-4 gap-2">
+            {ages.map((age) => (
+              <button
+                key={age}
+                onClick={() => setSelectedAge(age)}
+                className={`py-3 px-2 rounded-xl font-bold text-base transition-all ${
+                  selectedAge === age
+                    ? 'bg-btn-green text-white shadow-fun-sm scale-105'
+                    : 'bg-muted text-foreground hover:bg-muted/80 hover:scale-105'
+                }`}
+              >
+                {age}
+              </button>
+            ))}
+          </div>
+          {selectedAge && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Aktuelles Alter: {selectedAge} Jahre
+            </p>
+          )}
+        </div>
 
         {/* Correct Image Upload */}
         <div className="mb-6">

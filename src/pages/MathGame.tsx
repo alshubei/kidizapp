@@ -7,18 +7,40 @@ import { ScoreDisplay } from '@/components/ScoreDisplay';
 import { GameButton } from '@/components/GameButton';
 import { SoundToggle } from '@/components/SoundToggle';
 import { ParentSettings } from '@/components/ParentSettings';
+import { AgeGate } from '@/components/AgeGate';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { useSpeech } from '@/hooks/useSpeech';
 import { useHandwritingRecognition } from '@/hooks/useHandwritingRecognition';
+import { getAgeFromStorage, saveAgeToStorage } from '@/lib/ageUtils';
+import { AgeRange } from '@/types/game';
 
 const MathGame: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAgeGate, setShowAgeGate] = useState(false);
+  const [childAge, setChildAge] = useState<AgeRange | null>(null);
   const [customImages, setCustomImages] = useState<{ correct: string | null; wrong: string | null }>({
     correct: null,
     wrong: null,
   });
   const [lastAnswer, setLastAnswer] = useState<number | null>(null);
+
+  // Load age from storage on mount
+  useEffect(() => {
+    const storedAge = getAgeFromStorage();
+    if (storedAge) {
+      setChildAge(storedAge);
+    } else {
+      setShowAgeGate(true);
+    }
+  }, []);
+
+  // Update game logic when age changes
+  useEffect(() => {
+    if (childAge && updateAge) {
+      updateAge(childAge);
+    }
+  }, [childAge, updateAge]);
 
   const {
     score,
@@ -30,7 +52,8 @@ const MathGame: React.FC = () => {
     nextProblem,
     retry,
     setProcessing,
-  } = useGameLogic('easy');
+    updateAge,
+  } = useGameLogic(childAge || 7); // Default to 7 if age not set yet (math game is for 7-10)
 
   const { isMuted, toggleMute, speakCorrect, speakWrong } = useSpeech();
   const { recognizeDigit, isRecognizing } = useHandwritingRecognition();
@@ -101,6 +124,35 @@ const MathGame: React.FC = () => {
   const handleClearCanvas = useCallback(() => {
     setLastAnswer(null);
   }, []);
+
+  const handleAgeSelected = useCallback((age: number) => {
+    const ageRange = age as AgeRange;
+    setChildAge(ageRange);
+    saveAgeToStorage(ageRange);
+    setShowAgeGate(false);
+    if (updateAge) {
+      updateAge(ageRange);
+    }
+  }, [updateAge]);
+
+  const handleAgeChange = useCallback((age: number) => {
+    const ageRange = age as AgeRange;
+    setChildAge(ageRange);
+    saveAgeToStorage(ageRange);
+    if (updateAge) {
+      updateAge(ageRange);
+    }
+  }, [updateAge]);
+
+  // Don't render game if age is not set
+  if (!childAge || showAgeGate) {
+    return <AgeGate onAgeSelected={handleAgeSelected} />;
+  }
+
+  // Math game is only for ages 7-10
+  if (childAge < 7) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen gradient-warm py-4 sm:py-8 px-4">
@@ -183,6 +235,8 @@ const MathGame: React.FC = () => {
         onClose={() => setShowSettings(false)}
         customImages={customImages}
         onImageChange={handleImageChange}
+        currentAge={childAge}
+        onAgeChange={handleAgeChange}
       />
     </div>
   );

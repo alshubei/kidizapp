@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator for KidizApp</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px 5px;
+            cursor: pointer;
+        }
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>KidizApp Icon Generator</h1>
+    <p>Click the button below to generate all required PWA icons. Then right-click each icon to save it.</p>
+    
+    <button onclick="generateAllIcons()">Generate All Icons</button>
+    
+    <div class="icon-grid" id="iconContainer"></div>
+    
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        
+        function generateIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Background color matching theme
+            ctx.fillStyle = '#2d5016';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Rounded corners
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.beginPath();
+            const radius = size * 0.15;
+            ctx.roundRect(0, 0, size, size, radius);
+            ctx.fill();
+            
+            // Reset composite operation
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // Draw emoji/text (scaled)
+            ctx.fillStyle = '#fef3e2';
+            ctx.font = `bold ${size * 0.55}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🧮', size / 2, size / 2);
+            
+            return canvas;
+        }
+        
+        function generateAllIcons() {
+            const container = document.getElementById('iconContainer');
+            container.innerHTML = '';
+            
+            sizes.forEach(size => {
+                const canvas = generateIcon(size);
+                canvas.id = `icon-${size}`;
+                
+                const wrapper = document.createElement('div');
+                wrapper.style.textAlign = 'center';
+                
+                const label = document.createElement('div');
+                label.textContent = `${size}x${size}`;
+                label.style.marginBottom = '5px';
+                label.style.fontWeight = 'bold';
+                
+                const downloadBtn = document.createElement('button');
+                downloadBtn.textContent = 'Download';
+                downloadBtn.onclick = () => {
+                    canvas.toBlob(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `icon-${size}x${size}.png`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    });
+                };
+                
+                wrapper.appendChild(label);
+                wrapper.appendChild(canvas);
+                wrapper.appendChild(document.createElement('br'));
+                wrapper.appendChild(downloadBtn);
+                container.appendChild(wrapper);
+            });
+        }
+        
+        // Generate on load
+        window.onload = generateAllIcons;
+    </script>
+</body>
+</html>
+

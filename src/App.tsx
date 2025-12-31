@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { PWALauncher } from "@/components/PWALauncher";
 import Home from "@/pages/Home";
 import ShapeGame from "@/pages/ShapeGame";
 import MathGame from "@/pages/MathGame";
@@ -12,6 +13,7 @@ import NotFound from "@/pages/NotFound";
 const App = () => (
   <TooltipProvider>
     <BrowserRouter>
+      <PWALauncher />
       <Toaster />
       <Sonner />
       <Routes>

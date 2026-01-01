@@ -201,9 +201,9 @@ const ShapeGame: React.FC = () => {
     if (currentChallenge.type === 'match' || currentChallenge.type === 'color-match') {
       // Shape matching game
       return (
-        <div className="space-y-6">
+        <div className="space-y-3 sm:space-y-6">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="flex items-center justify-center gap-3 mb-2 sm:mb-4">
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
                 <span>{currentChallenge.question}</span>
               {currentChallenge.questionShape && (
@@ -267,9 +267,9 @@ const ShapeGame: React.FC = () => {
     } else if (currentChallenge.type === 'count') {
       // Counting game
       return (
-        <div className="space-y-6">
+        <div className="space-y-3 sm:space-y-6">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="flex items-center justify-center gap-3 mb-2 sm:mb-4">
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
                 <span>{currentChallenge.question}</span>
               {currentChallenge.questionShape && (
@@ -296,7 +296,7 @@ const ShapeGame: React.FC = () => {
           </div>
           
           {/* Shapes display area - clearly non-interactive */}
-          <div className="bg-card/30 rounded-3xl p-6 border-2 border-dashed border-muted-foreground/30 mb-8">
+          <div className="bg-card/30 rounded-3xl p-4 sm:p-6 border-2 border-dashed border-muted-foreground/30 mb-4 sm:mb-8">
             <p className="text-center text-sm text-muted-foreground mb-4 font-medium">
               👆 Zähle die Formen oben
             </p>
@@ -313,7 +313,7 @@ const ShapeGame: React.FC = () => {
           </div>
           
           {/* Visual separator with arrow pointing to answer buttons */}
-          <div className="flex flex-col items-center gap-3 mb-4">
+          <div className="flex flex-col items-center gap-2 sm:gap-3 mb-2 sm:mb-4">
             <div className="text-4xl animate-bounce">👇</div>
             <p className="text-lg sm:text-xl font-bold text-foreground">
               Klicke auf die richtige Zahl:
@@ -321,7 +321,7 @@ const ShapeGame: React.FC = () => {
           </div>
           
           {/* Number buttons - made more prominent and clearly interactive */}
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
             {currentChallenge.options?.map((option) => {
               const num = option as number;
               const isSelected = selectedAnswer === num;
@@ -333,12 +333,12 @@ const ShapeGame: React.FC = () => {
                   key={num}
                   onClick={() => handleAnswer(num)}
                   className={`
-                    w-24 h-24 sm:w-28 sm:h-28 rounded-3xl font-bold text-4xl sm:text-5xl
+                    w-16 h-16 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl font-bold text-3xl sm:text-5xl
                     transition-all duration-200
-                    ${isSelected && isCorrect ? 'bg-success text-white ring-4 ring-success scale-110 shadow-2xl' : ''}
-                    ${isSelected && isWrong ? 'bg-destructive text-white ring-4 ring-destructive animate-shake shadow-2xl' : ''}
-                    ${!isSelected ? 'bg-btn-blue text-white hover:bg-btn-blue/90 hover:scale-110 active:scale-95 shadow-fun-lg ring-2 ring-btn-blue/50' : ''}
-                    ${isSelected && !isCorrect && !isWrong ? 'bg-btn-blue text-white ring-4 ring-btn-blue scale-110 shadow-2xl' : ''}
+                    ${isSelected && isCorrect ? 'bg-success text-white ring-2 sm:ring-4 ring-success scale-110 shadow-2xl' : ''}
+                    ${isSelected && isWrong ? 'bg-destructive text-white ring-2 sm:ring-4 ring-destructive animate-shake shadow-2xl' : ''}
+                    ${!isSelected ? 'bg-btn-blue text-white hover:bg-btn-blue/90 hover:scale-110 active:scale-95 shadow-fun-lg ring-1 sm:ring-2 ring-btn-blue/50' : ''}
+                    ${isSelected && !isCorrect && !isWrong ? 'bg-btn-blue text-white ring-2 sm:ring-4 ring-btn-blue scale-110 shadow-2xl' : ''}
                     cursor-pointer
                     transform
                   `}
@@ -353,9 +353,9 @@ const ShapeGame: React.FC = () => {
     } else if (currentChallenge.type === 'find') {
       // Find the shape game
       return (
-        <div className="space-y-6">
+        <div className="space-y-3 sm:space-y-6">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="flex items-center justify-center gap-3 mb-2 sm:mb-4">
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
                 <span>{currentChallenge.question}</span>
               {currentChallenge.questionShape && (
@@ -409,10 +409,10 @@ const ShapeGame: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen gradient-warm py-4 sm:py-8 px-4">
+    <div className="min-h-screen gradient-warm py-2 sm:py-4 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <header className="flex items-center justify-between mb-6 sm:mb-8">
+        <header className="flex items-center justify-between mb-3 sm:mb-6">
           <div className="flex items-center gap-3">
             <span className="text-3xl sm:text-4xl">🔷</span>
             <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
@@ -442,17 +442,17 @@ const ShapeGame: React.FC = () => {
         </header>
 
         {/* Score Display */}
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-3 sm:mb-6">
           <ScoreDisplay score={score} streak={streak} />
         </div>
 
         {/* Game Content */}
-        <div className="mb-6">
+        <div className="mb-3 sm:mb-6 mx-2 sm:mx-0">
           {renderGameContent()}
         </div>
 
         {/* Navigation Buttons - Always visible to allow navigation between questions */}
-        <div className="flex justify-center gap-4 mt-6">
+        <div className="flex justify-center gap-4 mt-3 sm:mt-6">
           <button
             onClick={handlePrev}
             disabled={!hasPrevious}

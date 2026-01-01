@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 // https://vitejs.dev/config/
@@ -7,13 +7,6 @@ export default defineConfig({
   server: {
     host: "::",
     port: 8080,
-    fs: {
-      // Allow serving files from public directory
-      allow: ['..']
-    },
-    hmr: {
-      overlay: true,
-    },
   },
   preview: {
     port: 8080,
@@ -34,12 +27,4 @@ export default defineConfig({
       },
     },
   },
-  // Configure for ONNX Runtime Web
-  optimizeDeps: {
-    exclude: ['onnxruntime-web'],
-    // Force re-optimization to fix HMR issues
-    force: true,
-  },
-  // Ensure WASM and MJS files are handled correctly
-  assetsInclude: ['**/*.wasm', '**/*.mjs'],
 });

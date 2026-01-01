@@ -13,6 +13,17 @@ import { useSpeech } from '@/hooks/useSpeech';
 import { useHandwritingRecognition } from '@/hooks/useHandwritingRecognition';
 import { getAgeFromStorage, saveAgeToStorage } from '@/lib/ageUtils';
 import { loadAllCustomAssets } from '@/lib/assetStorage';
+import { clearGameProgress } from '@/lib/gameProgressStorage';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { AgeRange } from '@/types/game';
 
 // Convert numbers to German words for better speech synthesis
@@ -63,6 +74,7 @@ const MathGame: React.FC = () => {
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
   const [childAge, setChildAge] = useState<AgeRange | null>(null);
   const [customImages, setCustomImages] = useState<{ correct: string | null; wrong: string | null }>({
     correct: null,
@@ -115,8 +127,10 @@ const MathGame: React.FC = () => {
     nextProblem,
     prevProblem,
     retry,
+    resetGame,
     setProcessing,
     updateAge,
+    jumpToLevel,
     hasPrevious,
   } = useGameLogic(childAge || 6); // Default to 6 if age not set yet (math game is for 6-10)
 
@@ -243,6 +257,43 @@ const MathGame: React.FC = () => {
     }
   }, [prevProblem]);
 
+  const handleLevelClick = useCallback((level: number) => {
+    if (jumpToLevel) {
+      const result = jumpToLevel(level);
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext('2d');
+      
+      if (result) {
+        // Restore the last answer if available
+        setLastAnswer(result.lastAnswer);
+        
+        // Restore the canvas drawing if available
+        if (ctx && canvas && result.canvasImageData) {
+          const img = new Image();
+          img.onload = () => {
+            // Clear canvas first
+            ctx.fillStyle = '#1a3a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Draw the saved image
+            ctx.drawImage(img, 0, 0);
+          };
+          img.src = result.canvasImageData;
+        } else if (ctx && canvas) {
+          // No saved drawing, clear the canvas
+          ctx.fillStyle = '#1a3a1a';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+      } else {
+        setLastAnswer(null);
+        // Clear the canvas
+        if (ctx && canvas) {
+          ctx.fillStyle = '#1a3a1a';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+    }
+  }, [jumpToLevel]);
+
   const handleRetry = useCallback(() => {
     retry();
     // Clear the canvas
@@ -282,6 +333,24 @@ const MathGame: React.FC = () => {
     }
   }, [updateAge, navigate]);
 
+  const handleResetGame = useCallback(() => {
+    // Clear progress from localStorage
+    clearGameProgress();
+    // Reset game state
+    if (resetGame) {
+      resetGame();
+    }
+    setShowResetDialog(false);
+    setLastAnswer(null);
+    // Clear the canvas
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (ctx && canvas) {
+      ctx.fillStyle = '#1a3a1a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  }, [resetGame]);
+
   // Don't render game if age is not set
   if (!childAge) {
     return null;
@@ -309,6 +378,13 @@ const MathGame: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
+            <button
+              onClick={() => setShowResetDialog(true)}
+              className="btn-bounce bg-card p-2 rounded-full shadow-fun-sm"
+              title="Spiel zurücksetzen"
+            >
+              <span className="text-xl">🔄</span>
+            </button>
             <SoundToggle isMuted={isMuted} onToggle={toggleMute} />
             <button
               onClick={() => setShowSettings(true)}
@@ -322,7 +398,7 @@ const MathGame: React.FC = () => {
 
         {/* Score Display */}
         <div className="flex justify-center mb-6">
-          <ScoreDisplay score={score} streak={streak} />
+          <ScoreDisplay score={score} streak={streak} onLevelClick={handleLevelClick} />
         </div>
 
         {/* Chalkboard */}
@@ -367,7 +443,7 @@ const MathGame: React.FC = () => {
         </div>
 
         {/* Navigation Buttons - Always visible to allow navigation between questions */}
-        <div className="flex justify-center gap-4 mb-6">
+        <div className="flex justify-center gap-4 mb-6 sm:mb-12">
           <button
             onClick={handlePrev}
             disabled={!hasPrevious}
@@ -423,6 +499,27 @@ const MathGame: React.FC = () => {
         currentAge={childAge}
         onAgeChange={handleAgeChange}
       />
+
+      {/* Reset Game Confirmation Dialog */}
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Spiel zurücksetzen? 🔄</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchtest du wirklich das Spiel zurücksetzen? Dein aktueller Punktestand und Fortschritt werden gelöscht und das Spiel startet von vorne.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetGame}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Zurücksetzen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

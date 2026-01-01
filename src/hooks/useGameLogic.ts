@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { MathProblem, GameState, AgeRange } from '@/types/game';
 import { getAgeConstraints } from '@/lib/ageUtils';
+import { getGameProgress, saveGameProgress, getPlayerName } from '@/lib/gameProgressStorage';
 
 const generateProblem = (age: AgeRange): MathProblem => {
   const constraints = getAgeConstraints(age);
@@ -52,15 +53,47 @@ interface ProblemHistory {
 }
 
 export const useGameLogic = (age: AgeRange) => {
-  const [state, setState] = useState<GameState>({
-    score: 0,
-    streak: 0,
-    currentProblem: generateProblem(age),
-    feedback: 'none',
-    isProcessing: false,
+  // Load saved progress if it exists (only on initial mount)
+  const [state, setState] = useState<GameState>(() => {
+    const savedProgress = getGameProgress();
+    const playerName = getPlayerName();
+    
+    if (savedProgress && playerName && savedProgress.gameType === 'math') {
+      // Load saved progress
+      return {
+        score: savedProgress.score,
+        streak: savedProgress.streak,
+        currentProblem: generateProblem(age),
+        feedback: 'none',
+        isProcessing: false,
+      };
+    }
+    
+    // Start fresh
+    return {
+      score: 0,
+      streak: 0,
+      currentProblem: generateProblem(age),
+      feedback: 'none',
+      isProcessing: false,
+    };
   });
   const [history, setHistory] = useState<ProblemHistory[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
+
+  // Save progress whenever score changes
+  useEffect(() => {
+    const playerName = getPlayerName();
+    if (playerName) {
+      saveGameProgress({
+        playerName,
+        score: state.score,
+        streak: state.streak,
+        gameType: 'math',
+        lastUpdated: Date.now(),
+      });
+    }
+  }, [state.score, state.streak]);
 
   const checkAnswer = useCallback((userAnswer: number): boolean => {
     const isCorrect = userAnswer === state.currentProblem.answer;
@@ -153,6 +186,30 @@ export const useGameLogic = (age: AgeRange) => {
     setHistoryIndex(-1);
   }, []);
 
+  const jumpToLevel = useCallback((level: number) => {
+    // Level is 1-indexed, but history is 0-indexed
+    // Level N means we've completed N challenges, so we want to go to history[N-1]
+    const targetIndex = level - 1;
+    if (targetIndex >= 0 && targetIndex < history.length) {
+      const targetState = history[targetIndex];
+      setState({
+        score: targetState.score,
+        streak: targetState.streak,
+        currentProblem: targetState.problem,
+        feedback: targetState.feedback,
+        isProcessing: false,
+      });
+      setHistoryIndex(targetIndex);
+      return {
+        selectedAnswer: targetState.selectedAnswer,
+        feedback: targetState.feedback,
+        lastAnswer: targetState.lastAnswer,
+        canvasImageData: targetState.canvasImageData,
+      };
+    }
+    return null;
+  }, [history]);
+
   return {
     ...state,
     checkAnswer,
@@ -162,6 +219,7 @@ export const useGameLogic = (age: AgeRange) => {
     setProcessing,
     resetGame,
     updateAge,
+    jumpToLevel,
     hasPrevious: historyIndex >= 0,
   };
 };

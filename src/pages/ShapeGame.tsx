@@ -12,11 +12,23 @@ import { useSpeech } from '@/hooks/useSpeech';
 import { getAgeFromStorage, saveAgeToStorage } from '@/lib/ageUtils';
 import { loadAllCustomAssets } from '@/lib/assetStorage';
 import { getShapeDescription, getShapeNamePlural } from '@/lib/shapeGameUtils';
+import { clearGameProgress } from '@/lib/gameProgressStorage';
 import { AgeRange, Shape } from '@/types/game';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const ShapeGame: React.FC = () => {
   const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
   const [childAge, setChildAge] = useState<AgeRange | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<number | Shape | null>(null);
   const [customImages, setCustomImages] = useState<{ correct: string | null; wrong: string | null }>({
@@ -68,7 +80,9 @@ const ShapeGame: React.FC = () => {
     nextChallenge,
     prevChallenge,
     retry,
+    resetGame,
     updateAge,
+    jumpToLevel,
     hasPrevious,
   } = useShapeGameLogic(childAge || 5);
 
@@ -164,6 +178,17 @@ const ShapeGame: React.FC = () => {
     }
   }, [prevChallenge]);
 
+  const handleLevelClick = useCallback((level: number) => {
+    if (jumpToLevel) {
+      const result = jumpToLevel(level);
+      if (result) {
+        setSelectedAnswer(result.selectedAnswer);
+      } else {
+        setSelectedAnswer(null);
+      }
+    }
+  }, [jumpToLevel]);
+
   const handleRetry = useCallback(() => {
     retry();
     setSelectedAnswer(null);
@@ -191,6 +216,17 @@ const ShapeGame: React.FC = () => {
       navigate('/game/shape', { replace: true });
     }
   }, [updateAge, navigate]);
+
+  const handleResetGame = useCallback(() => {
+    // Clear progress from localStorage
+    clearGameProgress();
+    // Reset game state
+    if (resetGame) {
+      resetGame();
+    }
+    setShowResetDialog(false);
+    setSelectedAnswer(null);
+  }, [resetGame]);
 
   // Don't render game if age is not set
   if (!childAge) {
@@ -430,6 +466,13 @@ const ShapeGame: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
+            <button
+              onClick={() => setShowResetDialog(true)}
+              className="btn-bounce bg-card p-2 rounded-full shadow-fun-sm"
+              title="Spiel zurücksetzen"
+            >
+              <span className="text-xl">🔄</span>
+            </button>
             <SoundToggle isMuted={isMuted} onToggle={toggleMute} />
             <button
               onClick={() => setShowSettings(true)}
@@ -443,7 +486,7 @@ const ShapeGame: React.FC = () => {
 
         {/* Score Display */}
         <div className="flex justify-center mb-3 sm:mb-6">
-          <ScoreDisplay score={score} streak={streak} />
+          <ScoreDisplay score={score} streak={streak} onLevelClick={handleLevelClick} />
         </div>
 
         {/* Game Content */}
@@ -452,7 +495,7 @@ const ShapeGame: React.FC = () => {
         </div>
 
         {/* Navigation Buttons - Always visible to allow navigation between questions */}
-        <div className="flex justify-center gap-4 mt-3 sm:mt-6">
+        <div className="flex justify-center gap-4 mt-3 sm:mt-12">
           <button
             onClick={handlePrev}
             disabled={!hasPrevious}
@@ -503,6 +546,27 @@ const ShapeGame: React.FC = () => {
         currentAge={childAge}
         onAgeChange={handleAgeChange}
       />
+
+      {/* Reset Game Confirmation Dialog */}
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Spiel zurücksetzen? 🔄</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchtest du wirklich das Spiel zurücksetzen? Dein aktueller Punktestand und Fortschritt werden gelöscht und das Spiel startet von vorne.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetGame}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Zurücksetzen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

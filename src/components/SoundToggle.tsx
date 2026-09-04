@@ -1,4 +1,5 @@
 import React from 'react';
+import { Volume2, VolumeX } from 'lucide-react';
 
 interface SoundToggleProps {
   isMuted: boolean;
@@ -9,15 +10,15 @@ export const SoundToggle: React.FC<SoundToggleProps> = ({ isMuted, onToggle }) =
   return (
     <button
       onClick={onToggle}
-      className="btn-bounce bg-card px-4 py-2 rounded-full shadow-fun-sm flex items-center gap-2 transition-all"
+      className="bg-white/80 p-1.5 rounded-full shadow-sm flex items-center justify-center transition-all hover:bg-white"
       title={isMuted ? 'Ton einschalten' : 'Ton ausschalten'}
+      aria-label={isMuted ? 'Ton einschalten' : 'Ton ausschalten'}
     >
-      <span className="text-xl">
-        {isMuted ? '🔇' : '🔊'}
-      </span>
-      <span className="text-sm font-medium text-foreground/70 hidden sm:inline">
-        {isMuted ? 'Stumm' : 'Ton an'}
-      </span>
+      {isMuted ? (
+        <VolumeX className="w-3.5 h-3.5 text-[#2D3561]" strokeWidth={2.25} />
+      ) : (
+        <Volume2 className="w-3.5 h-3.5 text-[#2D3561]" strokeWidth={2.25} />
+      )}
     </button>
   );
 };

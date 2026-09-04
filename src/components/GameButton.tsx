@@ -16,23 +16,19 @@ export const GameButton: React.FC<GameButtonProps> = ({
   const variants = {
     check: {
       bg: 'bg-btn-green',
-      text: '✨ Prüfen',
-      icon: '✨',
+      text: 'Prüfen',
     },
     next: {
       bg: 'bg-btn-blue',
-      text: '➡️ Weiter',
-      icon: '➡️',
+      text: 'Weiter',
     },
     retry: {
       bg: 'bg-btn-yellow',
-      text: '🔁 Nochmal',
-      icon: '🔁',
+      text: 'Nochmal',
     },
     settings: {
       bg: 'bg-btn-purple',
-      text: '⚙️ Einstellungen',
-      icon: '⚙️',
+      text: 'Einstellungen',
     },
   };
 
@@ -50,14 +46,7 @@ export const GameButton: React.FC<GameButtonProps> = ({
         flex items-center justify-center gap-2
       `}
     >
-      {isLoading ? (
-        <>
-          <span className="animate-spin">⏳</span>
-          <span>Erkenne...</span>
-        </>
-      ) : (
-        config.text
-      )}
+      {isLoading ? 'Erkenne…' : config.text}
     </button>
   );
 };

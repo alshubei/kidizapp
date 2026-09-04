@@ -103,29 +103,29 @@ export const ShapeOptionCard: React.FC<ShapeOptionCardProps> = ({
       type="button"
       onClick={onClick}
       className={`
-        rounded-2xl p-5 text-center transition-all duration-200 active:scale-95
+        rounded-xl p-2.5 text-center transition-all duration-200 active:scale-95
         ${onClick ? 'cursor-pointer hover:scale-[1.03]' : ''}
-        ${isCorrect ? 'ring-4 ring-emerald-400 scale-105' : ''}
-        ${isWrong ? 'ring-4 ring-red-400 animate-shake' : ''}
-        ${isSelected && !isCorrect && !isWrong ? 'ring-4 ring-white/80 scale-105' : ''}
+        ${isCorrect ? 'ring-[3px] ring-emerald-400' : ''}
+        ${isWrong ? 'ring-[3px] ring-red-400 animate-shake' : ''}
+        ${isSelected && !isCorrect && !isWrong ? 'ring-[3px] ring-white/80' : ''}
       `}
       style={{
         background: GRADIENTS[color],
         boxShadow: isSelected || isCorrect
-          ? `0 2px 6px rgba(0,0,0,0.08), 0 0 0 4px ${colorValues[color]}33`
+          ? `0 2px 6px rgba(0,0,0,0.08), 0 0 0 3px ${colorValues[color]}33`
           : '0 2px 6px rgba(0,0,0,0.08)',
-        border: isSelected || isCorrect ? `3px solid ${colorValues[color]}` : '3px solid transparent',
+        border: isSelected || isCorrect ? `2px solid ${colorValues[color]}` : '2px solid transparent',
       }}
       aria-label={getShapeName(shape.type)}
     >
-      <div className="flex justify-center mb-2">
-        <svg width={56} height={56} viewBox="0 0 56 56" className="drop-shadow-sm">
-          {renderMiniShape(shape.type, fill, 56)}
+      <div className={`flex justify-center ${showLabel ? 'mb-1' : ''}`}>
+        <svg width={40} height={40} viewBox="0 0 40 40" className="drop-shadow-sm">
+          {renderMiniShape(shape.type, fill, 40)}
         </svg>
       </div>
       {showLabel && (
         <div
-          className="text-xs font-bold uppercase tracking-wide"
+          className="text-[10px] font-bold uppercase tracking-wide leading-tight"
           style={{ color: textLight ? '#fff' : '#555' }}
         >
           {getShapeName(shape.type)}

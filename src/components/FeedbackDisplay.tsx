@@ -94,11 +94,11 @@ export const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({
           {/* Title */}
           <h2 className={`
             text-4xl sm:text-5xl md:text-6xl font-bold mb-2
-            ${isCorrect ? 'text-white' : 'text-white'}
+            text-white
             drop-shadow-lg
             ${isCorrect ? 'animate-scale-bounce' : 'animate-shake'}
           `}>
-            {isCorrect ? '🎉 Super!' : '😢 Ohh...'}
+            {isCorrect ? 'Super!' : 'Ohh…'}
           </h2>
 
           {/* Message */}
@@ -111,8 +111,8 @@ export const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({
             max-w-lg
           `}>
             {isCorrect 
-              ? 'Das ist richtig! Du bist toll!' 
-              : 'Das war leider falsch. Versuch es nochmal!'}
+              ? 'Das ist richtig.' 
+              : 'Das war leider falsch. Versuch es nochmal.'}
           </p>
 
           {/* Button */}
@@ -137,7 +137,7 @@ export const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({
                   min-w-[200px] sm:min-w-[250px]
                 "
               >
-                ➡️ Nächste Aufgabe
+                Nächste Aufgabe
               </button>
               )
             ) : (
@@ -155,7 +155,7 @@ export const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({
                   min-w-[200px] sm:min-w-[250px]
                 "
               >
-                🔁 Nochmal versuchen
+                Nochmal versuchen
               </button>
             )}
           </div>

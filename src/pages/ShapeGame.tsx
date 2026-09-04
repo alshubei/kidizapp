@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import { Volume2, RotateCcw, Settings } from 'lucide-react';
 import { SoundToggle } from '@/components/SoundToggle';
 import { ParentSettings } from '@/components/ParentSettings';
 import { FeedbackDisplay } from '@/components/FeedbackDisplay';
@@ -12,7 +13,6 @@ import { getAgeFromStorage, saveAgeToStorage } from '@/lib/ageUtils';
 import { loadAllCustomAssets } from '@/lib/assetStorage';
 import {
   getShapeDescription,
-  getShapeName,
   getShapeNamePlural,
   getColorName,
   COUNT_QUESTION_SECONDS,
@@ -92,6 +92,7 @@ const ShapeGame: React.FC = () => {
     hasPrevious,
   } = useShapeGameLogic(childAge || 5);
   const [secondsLeft, setSecondsLeft] = useState(COUNT_QUESTION_SECONDS);
+  const [timerStarted, setTimerStarted] = useState(false);
   const timedOutRef = useRef(false);
   const selectedShapeIndicesRef = useRef<number[]>([]);
   selectedShapeIndicesRef.current = selectedShapeIndices;
@@ -156,9 +157,14 @@ const ShapeGame: React.FC = () => {
     }
   }, [feedback, checkAnswer, speakCorrect, speakWrong]);
 
-  // 5-second countdown on count questions only — ends the round and grades taps
+  // Countdown starts only after the first shape tap on count questions
   useEffect(() => {
-    if (!childAge || currentChallenge?.type !== 'count' || feedback !== 'none') {
+    if (
+      !childAge ||
+      currentChallenge?.type !== 'count' ||
+      feedback !== 'none' ||
+      !timerStarted
+    ) {
       return;
     }
 
@@ -176,11 +182,14 @@ const ShapeGame: React.FC = () => {
     }, 1000);
 
     return () => window.clearInterval(intervalId);
-  }, [childAge, currentChallenge, feedback, handleTimeout]);
+  }, [childAge, currentChallenge, feedback, timerStarted, handleTimeout]);
 
-  // Clear shape selections when the challenge changes
+  // Reset selections and timer arming when the challenge changes
   useEffect(() => {
     setSelectedShapeIndices([]);
+    setTimerStarted(false);
+    setSecondsLeft(COUNT_QUESTION_SECONDS);
+    timedOutRef.current = false;
   }, [currentChallenge]);
 
   // Auto-advance after a correct count answer (kid doesn't need to tap Next)
@@ -203,6 +212,8 @@ const ShapeGame: React.FC = () => {
     }
     const timer = window.setTimeout(() => {
       timedOutRef.current = false;
+      setTimerStarted(false);
+      setSecondsLeft(COUNT_QUESTION_SECONDS);
       retry();
       setSelectedAnswer(null);
       setSelectedShapeIndices([]);
@@ -232,6 +243,9 @@ const ShapeGame: React.FC = () => {
   const handleShapeToggle = useCallback((index: number) => {
     if (feedback !== 'none' || timedOutRef.current) return;
     if (currentChallenge.type !== 'count') return;
+
+    // Arm the countdown on the first tap so speech can finish first
+    setTimerStarted(prev => prev || true);
 
     const nextSelected = selectedShapeIndicesRef.current.includes(index)
       ? selectedShapeIndicesRef.current.filter(i => i !== index)
@@ -317,6 +331,8 @@ const ShapeGame: React.FC = () => {
 
   const handleRetry = useCallback(() => {
     timedOutRef.current = false;
+    setTimerStarted(false);
+    setSecondsLeft(COUNT_QUESTION_SECONDS);
     retry();
     setSelectedAnswer(null);
     setSelectedShapeIndices([]);
@@ -364,9 +380,19 @@ const ShapeGame: React.FC = () => {
   const levelInSet = (score % 5) + 1;
   const progressPct = levelInSet * 20;
   const encouragement =
-    streak >= 3 ? 'Sehr gut gemacht! 🌟' : streak >= 1 ? 'Weiter so! 💪' : 'Du schaffst das! 🌈';
+    streak >= 3 ? 'Sehr gut gemacht' : streak >= 1 ? 'Weiter so' : 'Bereit?';
   const playerName = getPlayerName();
 
+  const speakButton = (
+    <button
+      onClick={speakCurrentQuestion}
+      className="bg-[#60A5FA] text-white p-2 rounded-full shadow-md hover:scale-105 active:scale-95 transition-all"
+      title="Frage nochmal hören"
+      aria-label="Frage nochmal hören"
+    >
+      <Volume2 className="w-4 h-4" strokeWidth={2.25} />
+    </button>
+  );
   const questionEyebrow = () => {
     if (currentChallenge.type === 'count') return 'WIE VIELE';
     if (currentChallenge.type === 'color-match') return 'FINDE DIE';
@@ -403,30 +429,23 @@ const ShapeGame: React.FC = () => {
   const renderGameContent = () => {
     if (currentChallenge.type === 'match' || currentChallenge.type === 'color-match') {
       return (
-        <>
-          <div className="text-center mb-6">
-            <div className="text-[13px] text-[#999] font-semibold mb-3 tracking-wide">
+        <div className="flex flex-col h-full min-h-0">
+          <div className="text-center shrink-0 mb-3">
+            <div className="text-[11px] text-[#999] font-semibold tracking-wide">
               {questionEyebrow()}
             </div>
-            <div className="text-[28px] font-bold mb-5" style={{ color: headlineColor }}>
+            <div className="text-xl font-bold leading-tight" style={{ color: headlineColor }}>
               {questionHeadline()}
             </div>
-            <div className="flex justify-center gap-3 items-center mb-8">
+            <div className="flex justify-center gap-2 items-center mt-2">
               {currentChallenge.questionShape && (
-                <HeroShape shape={currentChallenge.questionShape} size={100} />
+                <HeroShape shape={currentChallenge.questionShape} size={56} />
               )}
-              <button
-                onClick={speakCurrentQuestion}
-                className="btn-bounce bg-[#60A5FA] text-white p-3 rounded-full shadow-md hover:scale-105 transition-all"
-                title="Frage nochmal hören"
-                aria-label="Frage nochmal hören"
-              >
-                <span className="text-xl">🔊</span>
-              </button>
+              {speakButton}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2.5 flex-1 content-center min-h-0">
             {currentChallenge.options?.map((option, index) => {
               const shape = option as Shape;
               if (!shape?.type || !shape?.color) return null;
@@ -445,35 +464,28 @@ const ShapeGame: React.FC = () => {
               );
             })}
           </div>
-        </>
+        </div>
       );
     }
 
     if (currentChallenge.type === 'count') {
       const targetType = currentChallenge.questionShape?.type;
       return (
-        <>
-          <div className="text-center mb-6">
-            <div className="text-[13px] text-[#999] font-semibold mb-3 tracking-wide">
+        <div className="flex flex-col h-full min-h-0">
+          <div className="text-center shrink-0 mb-3">
+            <div className="text-[11px] text-[#999] font-semibold tracking-wide">
               {questionEyebrow()}
             </div>
-            <div className="text-[28px] font-bold mb-4" style={{ color: headlineColor }}>
+            <div className="text-xl font-bold leading-tight" style={{ color: headlineColor }}>
               {questionHeadline()}
             </div>
-            <div className="flex justify-center items-center gap-3 mb-6">
+            <div className="flex justify-center items-center gap-2 mt-2">
               <CountdownTimer secondsLeft={secondsLeft} />
-              <button
-                onClick={speakCurrentQuestion}
-                className="btn-bounce bg-[#60A5FA] text-white p-3 rounded-full shadow-md"
-                title="Frage nochmal hören"
-                aria-label="Frage nochmal hören"
-              >
-                <span className="text-xl">🔊</span>
-              </button>
+              {speakButton}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2.5 flex-1 content-center min-h-0">
             {currentChallenge.shapes.map((shape, index) => {
               const isSelected = selectedShapeIndices.includes(index);
               const isTarget = targetType ? shape.type === targetType : false;
@@ -493,36 +505,29 @@ const ShapeGame: React.FC = () => {
               );
             })}
           </div>
-        </>
+        </div>
       );
     }
 
     if (currentChallenge.type === 'find') {
       return (
-        <>
-          <div className="text-center mb-6">
-            <div className="text-[13px] text-[#999] font-semibold mb-3 tracking-wide">
+        <div className="flex flex-col h-full min-h-0">
+          <div className="text-center shrink-0 mb-3">
+            <div className="text-[11px] text-[#999] font-semibold tracking-wide">
               {questionEyebrow()}
             </div>
-            <div className="text-[28px] font-bold mb-5" style={{ color: headlineColor }}>
+            <div className="text-xl font-bold leading-tight" style={{ color: headlineColor }}>
               {questionHeadline()}
             </div>
-            <div className="flex justify-center gap-3 items-center mb-8">
+            <div className="flex justify-center gap-2 items-center mt-2">
               {currentChallenge.questionShape && (
-                <HeroShape shape={currentChallenge.questionShape} size={100} />
+                <HeroShape shape={currentChallenge.questionShape} size={56} />
               )}
-              <button
-                onClick={speakCurrentQuestion}
-                className="btn-bounce bg-[#60A5FA] text-white p-3 rounded-full shadow-md"
-                title="Frage nochmal hören"
-                aria-label="Frage nochmal hören"
-              >
-                <span className="text-xl">🔊</span>
-              </button>
+              {speakButton}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2.5 flex-1 content-center min-h-0">
             {currentChallenge.shapes.slice(0, 4).map((shape, index) => {
               const isSelected =
                 selectedAnswer !== null &&
@@ -543,7 +548,7 @@ const ShapeGame: React.FC = () => {
               );
             })}
           </div>
-        </>
+        </div>
       );
     }
 
@@ -555,93 +560,100 @@ const ShapeGame: React.FC = () => {
       className="min-h-dvh h-dvh overflow-hidden font-fredoka"
       style={{
         background: 'linear-gradient(135deg, #FFF9E6 0%, #F0E6FF 100%)',
-        paddingTop: 'max(2rem, env(safe-area-inset-top))',
-        paddingBottom: 'max(7.5rem, calc(env(safe-area-inset-bottom) + 5.5rem))',
-        paddingLeft: 16,
-        paddingRight: 16,
+        paddingTop: 'max(0.75rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(4.25rem, calc(env(safe-area-inset-bottom) + 3.25rem))',
+        paddingLeft: 12,
+        paddingRight: 12,
       }}
     >
-      <div className="max-w-[380px] mx-auto h-full flex flex-col min-h-0">
+      <div className="max-w-[380px] mx-auto h-full flex flex-col min-h-0 gap-2">
         {/* Header */}
-        <div className="text-center mb-6 shrink-0 relative">
-          <div className="absolute right-0 top-0 flex gap-2">
-            <button
-              onClick={() => setShowResetDialog(true)}
-              className="bg-white/80 p-2 rounded-full shadow-sm"
-              title="Spiel zurücksetzen"
-            >
-              <span className="text-lg">🔄</span>
-            </button>
-            <SoundToggle isMuted={isMuted} onToggle={toggleMute} />
-            <button
-              onClick={() => setShowSettings(true)}
-              className="bg-white/80 p-2 rounded-full shadow-sm"
-              title="Einstellungen"
-            >
-              <span className="text-lg">⚙️</span>
-            </button>
-          </div>
-          <div className="text-[42px] font-bold text-[#2D3561] leading-tight mb-1">
-            Form-Spaß! 🎨
-          </div>
-          <div className="text-sm text-[#666] font-medium">
-            Ab {childAge} Jahren{playerName ? ` · ${playerName}` : ''}
+        <div className="shrink-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="w-[96px] shrink-0" aria-hidden="true" />
+            <div className="flex-1 text-center min-w-0">
+              <div className="text-[26px] font-bold text-[#2D3561] leading-none">
+                Form-Spaß
+              </div>
+              <div className="text-[11px] text-[#666] font-medium mt-0.5">
+                Ab {childAge} Jahren{playerName ? ` · ${playerName}` : ''}
+              </div>
+            </div>
+            <div className="flex gap-1 shrink-0 w-[96px] justify-end">
+              <button
+                onClick={() => setShowResetDialog(true)}
+                className="bg-white/80 p-1.5 rounded-full shadow-sm hover:bg-white transition-all"
+                title="Spiel zurücksetzen"
+                aria-label="Spiel zurücksetzen"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-[#2D3561]" strokeWidth={2.25} />
+              </button>
+              <SoundToggle isMuted={isMuted} onToggle={toggleMute} />
+              <button
+                onClick={() => setShowSettings(true)}
+                className="bg-white/80 p-1.5 rounded-full shadow-sm hover:bg-white transition-all"
+                title="Einstellungen"
+                aria-label="Einstellungen"
+              >
+                <Settings className="w-3.5 h-3.5 text-[#2D3561]" strokeWidth={2.25} />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Progress card */}
-        <div className="bg-white rounded-2xl p-4 mb-6 text-center shadow-[0_2px_8px_rgba(0,0,0,0.06)] shrink-0">
-          <div className="text-[12px] text-[#999] mb-2 font-semibold uppercase tracking-wide">
-            Level {levelInSet} von 5
+        {/* Compact progress */}
+        <div className="bg-white rounded-xl px-3 py-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.06)] shrink-0 flex items-center gap-2">
+          <div className="text-[10px] text-[#999] font-semibold uppercase tracking-wide whitespace-nowrap">
+            Lvl {levelInSet}/5
           </div>
-          <div className="h-3 bg-[#E8E8E8] rounded-lg overflow-hidden mb-2">
+          <div className="h-1.5 flex-1 bg-[#E8E8E8] rounded-full overflow-hidden">
             <div
-              className="h-full rounded-lg transition-all duration-300"
+              className="h-full rounded-full transition-all duration-300"
               style={{
                 width: `${progressPct}%`,
                 background: 'linear-gradient(90deg, #FF6B6B, #FFD93D)',
               }}
             />
           </div>
-          <div className="text-[13px] text-[#666]">{encouragement}</div>
+          <div className="text-[10px] text-[#666] whitespace-nowrap">{encouragement}</div>
           {score > 0 && (
             <button
               type="button"
               onClick={() => handleLevelClick(Math.max(1, score))}
-              className="mt-2 text-xs text-[#7C3AED] font-semibold"
+              className="text-[10px] text-[#7C3AED] font-semibold whitespace-nowrap"
             >
-              ⭐ {score} Punkte
+              {score} Pkt
             </button>
           )}
         </div>
 
-        {/* Main game card */}
-        <div className="bg-white rounded-[20px] px-6 py-8 mb-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex-1 min-h-0 overflow-y-auto">
+        {/* Main game card — fills remaining space, no scroll */}
+        <div className="bg-white rounded-2xl px-3 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex-1 min-h-0 overflow-hidden flex flex-col">
           {renderGameContent()}
         </div>
       </div>
 
-      {/* Fixed bottom nav */}
+      {/* Compact fixed bottom nav */}
       <div
         className="fixed bottom-0 left-0 right-0 pointer-events-none"
         style={{
-          background: 'linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,1))',
-          padding: '24px 16px',
-          paddingBottom: 'max(32px, env(safe-area-inset-bottom))',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,1) 40%)',
+          padding: '8px 12px',
+          paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
         }}
       >
-        <div className="max-w-[380px] mx-auto flex gap-3 pointer-events-auto">
+        <div className="max-w-[380px] mx-auto flex gap-2 pointer-events-auto">
           <button
             onClick={handlePrev}
             disabled={!hasPrevious}
-            className="flex-1 py-[18px] text-white border-none rounded-2xl text-base font-bold shadow-[0_4px_8px_rgba(124,58,237,0.3)] transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 py-2.5 text-white border-none rounded-xl text-sm font-bold shadow-[0_3px_6px_rgba(124,58,237,0.25)] transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ background: 'linear-gradient(135deg, #A78BFA, #7C3AED)' }}
           >
             ← Zurück
           </button>
           <button
             onClick={handleNext}
-            className="flex-1 py-[18px] text-white border-none rounded-2xl text-base font-bold shadow-[0_4px_8px_rgba(16,185,129,0.3)] transition-transform active:scale-95"
+            className="flex-1 py-2.5 text-white border-none rounded-xl text-sm font-bold shadow-[0_3px_6px_rgba(16,185,129,0.25)] transition-transform active:scale-95"
             style={{ background: 'linear-gradient(135deg, #34D399, #10B981)' }}
           >
             Weiter →
@@ -673,7 +685,7 @@ const ShapeGame: React.FC = () => {
       <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Spiel zurücksetzen? 🔄</AlertDialogTitle>
+            <AlertDialogTitle>Spiel zurücksetzen?</AlertDialogTitle>
             <AlertDialogDescription>
               Möchtest du wirklich das Spiel zurücksetzen? Dein aktueller Punktestand und Fortschritt werden gelöscht und das Spiel startet von vorne.
             </AlertDialogDescription>

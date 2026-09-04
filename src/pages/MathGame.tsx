@@ -1,6 +1,7 @@
 import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import { RotateCcw, Settings, Volume2 } from 'lucide-react';
 import { Chalkboard } from '@/components/Chalkboard';
 import { DrawingCanvas } from '@/components/DrawingCanvas';
 import { FeedbackDisplay } from '@/components/FeedbackDisplay';
@@ -368,14 +369,12 @@ const MathGame: React.FC = () => {
         {/* Header */}
         <header className="flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <span className="text-3xl sm:text-4xl">🧮</span>
             <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
               <h1 className="text-xl sm:text-2xl font-bold text-foreground">
                 Mathe-Spaß
               </h1>
               {childAge && (
                 <div className="flex items-center gap-1 bg-btn-purple/20 px-3 py-1 rounded-full">
-                  <span className="text-sm">👶</span>
                   <span className="text-sm font-bold text-btn-purple">
                     Alter: {childAge} Jahre
                   </span>
@@ -386,18 +385,20 @@ const MathGame: React.FC = () => {
           <div className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => setShowResetDialog(true)}
-              className="btn-bounce bg-card p-2 rounded-full shadow-fun-sm"
+              className="btn-bounce bg-card p-2.5 rounded-full shadow-fun-sm"
               title="Spiel zurücksetzen"
+              aria-label="Spiel zurücksetzen"
             >
-              <span className="text-xl">🔄</span>
+              <RotateCcw className="w-5 h-5 text-foreground" strokeWidth={2.25} />
             </button>
             <SoundToggle isMuted={isMuted} onToggle={toggleMute} />
             <button
               onClick={() => setShowSettings(true)}
-              className="btn-bounce bg-card p-2 rounded-full shadow-fun-sm"
+              className="btn-bounce bg-card p-2.5 rounded-full shadow-fun-sm"
               title="Einstellungen"
+              aria-label="Einstellungen"
             >
-              <span className="text-xl">⚙️</span>
+              <Settings className="w-5 h-5 text-foreground" strokeWidth={2.25} />
             </button>
           </div>
         </header>
@@ -417,7 +418,7 @@ const MathGame: React.FC = () => {
               title="Frage nochmal hören"
               aria-label="Frage nochmal hören"
             >
-              <span className="text-xl sm:text-2xl">🔊</span>
+              <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.25} />
             </button>
           </div>
         </div>
@@ -480,7 +481,7 @@ const MathGame: React.FC = () => {
 
         {/* Footer hint */}
         <p className="text-center text-muted-foreground text-sm shrink-0">
-          Schreibe die Zahl mit dem Finger oder der Maus! ✍️
+          Schreibe die Zahl mit dem Finger oder der Maus.
         </p>
       </div>
 
@@ -510,7 +511,7 @@ const MathGame: React.FC = () => {
       <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Spiel zurücksetzen? 🔄</AlertDialogTitle>
+            <AlertDialogTitle>Spiel zurücksetzen?</AlertDialogTitle>
             <AlertDialogDescription>
               Möchtest du wirklich das Spiel zurücksetzen? Dein aktueller Punktestand und Fortschritt werden gelöscht und das Spiel startet von vorne.
             </AlertDialogDescription>

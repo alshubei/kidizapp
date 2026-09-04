@@ -22,7 +22,44 @@ export type Difficulty = 'easy' | 'medium' | 'hard';
 export type AgeRange = 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 // Shape game types
-export type ShapeType = 'circle' | 'square' | 'triangle' | 'star' | 'heart' | 'diamond';
+export type ShapeType =
+  | 'circle'
+  | 'square'
+  | 'triangle'
+  | 'star'
+  | 'heart'
+  | 'diamond'
+  | 'cat'
+  | 'dog'
+  | 'rabbit'
+  | 'bear'
+  | 'fox'
+  | 'frog'
+  | 'fish'
+  | 'bird'
+  | 'butterfly'
+  | 'bee'
+  | 'duck'
+  | 'pig'
+  | 'cow'
+  | 'mouse'
+  | 'lion'
+  | 'panda'
+  | 'chick'
+  | 'turtle'
+  | 'whale'
+  | 'unicorn'
+  | 'owl'
+  | 'penguin'
+  | 'monkey'
+  | 'horse'
+  | 'chicken'
+  | 'snail'
+  | 'ladybug'
+  | 'octopus'
+  | 'giraffe'
+  | 'dragon';
+
 export type ShapeColor = 'red' | 'blue' | 'green' | 'yellow' | 'purple' | 'orange';
 
 export interface Shape {

@@ -1,4 +1,15 @@
 import React, { useRef, useState, useEffect } from 'react';
+import {
+  X,
+  Check,
+  ImagePlus,
+  Camera,
+  Mic,
+  Square,
+  Play,
+  Trash2,
+  Save,
+} from 'lucide-react';
 import { CameraCapture } from '@/components/CameraCapture';
 import { recordAudio, blobToDataURL, playAudio } from '@/lib/audioUtils';
 import { saveCustomImage, saveCustomAudio, loadCustomImage, loadCustomAudio, compressImage } from '@/lib/assetStorage';
@@ -20,6 +31,8 @@ interface ParentSettingsProps {
   onAgeChange: (age: number) => void;
 }
 
+type FeedbackKind = 'correct' | 'wrong';
+
 export const ParentSettings: React.FC<ParentSettingsProps> = ({
   isOpen,
   onClose,
@@ -37,28 +50,20 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
   const [selectedAge, setSelectedAge] = useState<number | null>(currentAge);
   const [isRecording, setIsRecording] = useState<{ correct: boolean; wrong: boolean }>({ correct: false, wrong: false });
   const [showCamera, setShowCamera] = useState<{ correct: boolean; wrong: boolean }>({ correct: false, wrong: false });
-  const [cameraType, setCameraType] = useState<'correct' | 'wrong' | null>(null);
+  const [cameraType, setCameraType] = useState<FeedbackKind | null>(null);
   const recorderRef = useRef<{ start: () => void; stop: () => Promise<Blob | null> } | null>(null);
-  
+
   const ages: number[] = [3, 4, 5, 6, 7, 8, 9, 10];
 
-  // Load saved assets from localStorage when modal opens
   useEffect(() => {
     if (isOpen) {
-      // Load from localStorage (persisted assets)
-      const savedCorrectImage = loadCustomImage('correct');
-      const savedWrongImage = loadCustomImage('wrong');
-      const savedCorrectAudio = loadCustomAudio('correct');
-      const savedWrongAudio = loadCustomAudio('wrong');
-
-      // Use saved assets if available, otherwise use props
       setPreview({
-        correct: savedCorrectImage || customImages.correct,
-        wrong: savedWrongImage || customImages.wrong,
+        correct: loadCustomImage('correct') || customImages.correct,
+        wrong: loadCustomImage('wrong') || customImages.wrong,
       });
       setAudioPreview({
-        correct: savedCorrectAudio || customAudio.correct,
-        wrong: savedWrongAudio || customAudio.wrong,
+        correct: loadCustomAudio('correct') || customAudio.correct,
+        wrong: loadCustomAudio('wrong') || customAudio.wrong,
       });
       setSelectedAge(currentAge);
     }
@@ -66,7 +71,7 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
 
   if (!isOpen) return null;
 
-  const handleFileChange = async (type: 'correct' | 'wrong', file: File | null) => {
+  const handleFileChange = async (type: FeedbackKind, file: File | null) => {
     if (!file) {
       setPreview(prev => ({ ...prev, [type]: null }));
       return;
@@ -75,7 +80,6 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
     const reader = new FileReader();
     reader.onload = async (e) => {
       const result = e.target?.result as string;
-      // Compress image to save storage space
       try {
         const compressed = await compressImage(result);
         setPreview(prev => ({ ...prev, [type]: compressed }));
@@ -87,14 +91,13 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const handleCameraCapture = (type: 'correct' | 'wrong') => {
+  const handleCameraCapture = (type: FeedbackKind) => {
     setCameraType(type);
     setShowCamera(prev => ({ ...prev, [type]: true }));
   };
 
-  const handleCameraCaptureComplete = async (type: 'correct' | 'wrong', image: string) => {
+  const handleCameraCaptureComplete = async (type: FeedbackKind, image: string) => {
     try {
-      // Compress camera image to save storage space
       const compressed = await compressImage(image);
       setPreview(prev => ({ ...prev, [type]: compressed }));
     } catch (error) {
@@ -105,12 +108,12 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
     setCameraType(null);
   };
 
-  const handleCameraCancel = (type: 'correct' | 'wrong') => {
+  const handleCameraCancel = (type: FeedbackKind) => {
     setShowCamera(prev => ({ ...prev, [type]: false }));
     setCameraType(null);
   };
 
-  const handleStartRecording = async (type: 'correct' | 'wrong') => {
+  const handleStartRecording = async (type: FeedbackKind) => {
     try {
       const recorder = await recordAudio();
       recorderRef.current = recorder;
@@ -122,9 +125,9 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
     }
   };
 
-  const handleStopRecording = async (type: 'correct' | 'wrong') => {
+  const handleStopRecording = async (type: FeedbackKind) => {
     if (!recorderRef.current) return;
-    
+
     try {
       const blob = await recorderRef.current.stop();
       if (blob) {
@@ -139,25 +142,22 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
     }
   };
 
-  const handlePlayAudio = async (type: 'correct' | 'wrong') => {
+  const handlePlayAudio = async (type: FeedbackKind) => {
     const audio = audioPreview[type];
-    if (audio) {
-      try {
-        await playAudio(audio);
-      } catch (error) {
-        console.error('Error playing audio:', error);
-      }
+    if (!audio) return;
+    try {
+      await playAudio(audio);
+    } catch (error) {
+      console.error('Error playing audio:', error);
     }
   };
 
   const handleSave = () => {
-    // Save to localStorage for offline use
     saveCustomImage('correct', preview.correct);
     saveCustomImage('wrong', preview.wrong);
     saveCustomAudio('correct', audioPreview.correct);
     saveCustomAudio('wrong', audioPreview.wrong);
-    
-    // Update parent component state
+
     onImageChange('correct', preview.correct);
     onImageChange('wrong', preview.wrong);
     onAudioChange('correct', audioPreview.correct);
@@ -168,303 +168,212 @@ export const ParentSettings: React.FC<ParentSettingsProps> = ({
     onClose();
   };
 
-  const handleReset = (type: 'correct' | 'wrong') => {
+  const handleReset = (type: FeedbackKind) => {
     setPreview(prev => ({ ...prev, [type]: null }));
     setAudioPreview(prev => ({ ...prev, [type]: null }));
-    // Also clear from localStorage
     saveCustomImage(type, null);
     saveCustomAudio(type, null);
-    if (type === 'correct' && correctInputRef.current) {
-      correctInputRef.current.value = '';
-    }
-    if (type === 'wrong' && wrongInputRef.current) {
-      wrongInputRef.current.value = '';
-    }
+    if (type === 'correct' && correctInputRef.current) correctInputRef.current.value = '';
+    if (type === 'wrong' && wrongInputRef.current) wrongInputRef.current.value = '';
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-foreground/40 backdrop-blur-sm">
-      <div className="bg-card rounded-3xl p-6 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-foreground">
-            ⚙️ Eltern-Einstellungen
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-2xl hover:scale-110 transition-transform"
+  const iconBtn =
+    'inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white border border-[#E8E0F5] text-[#2D3561] shadow-sm active:scale-95 transition-transform disabled:opacity-40';
+
+  const renderFeedbackCard = (type: FeedbackKind) => {
+    const isCorrect = type === 'correct';
+    const accent = isCorrect ? '#10B981' : '#EF4444';
+    const accentBg = isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)';
+    const inputRef = isCorrect ? correctInputRef : wrongInputRef;
+    const hasImage = Boolean(preview[type]);
+    const hasAudio = Boolean(audioPreview[type]);
+    const recording = isRecording[type];
+
+    return (
+      <div
+        className="rounded-2xl p-2.5 flex flex-col gap-2 min-w-0"
+        style={{ background: accentBg, border: `1.5px solid ${accent}33` }}
+      >
+        <div className="flex items-center gap-1.5">
+          <span
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full text-white"
+            style={{ background: accent }}
           >
-            ✕
-          </button>
+            {isCorrect ? <Check className="w-3 h-3" strokeWidth={3} /> : <X className="w-3 h-3" strokeWidth={3} />}
+          </span>
+          <span className="text-xs font-bold text-[#2D3561]">
+            {isCorrect ? 'Richtig' : 'Falsch'}
+          </span>
         </div>
 
-        <p className="text-muted-foreground mb-6 text-sm">
-          Hier kannst du das Alter deines Kindes ändern, eigene Bilder und Audio-Aufnahmen für das Feedback hochladen.
-          <span className="block mt-2 text-xs">💾 Alle Einstellungen werden lokal gespeichert und funktionieren offline.</span>
-        </p>
-
-        {/* Age Selection */}
-        <div className="mb-6">
-          <label className="block font-bold text-foreground mb-3">
-            👶 Alter des Kindes (3-10 Jahre)
-          </label>
-          <div className="grid grid-cols-4 gap-2">
-            {ages.map((age) => (
-              <button
-                key={age}
-                onClick={() => setSelectedAge(age)}
-                className={`py-3 px-2 rounded-xl font-bold text-base transition-all ${
-                  selectedAge === age
-                    ? 'bg-btn-green text-white shadow-fun-sm scale-105'
-                    : 'bg-muted text-foreground hover:bg-muted/80 hover:scale-105'
-                }`}
-              >
-                {age}
-              </button>
-            ))}
-          </div>
-          {selectedAge && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Aktuelles Alter: {selectedAge} Jahre
-            </p>
+        <div
+          className="w-full aspect-square max-h-[88px] rounded-xl flex items-center justify-center overflow-hidden bg-white/70 border border-dashed"
+          style={{ borderColor: `${accent}55` }}
+        >
+          {hasImage ? (
+            <img src={preview[type]!} alt="" className="w-full h-full object-contain" />
+          ) : (
+            <ImagePlus className="w-6 h-6 opacity-35" style={{ color: accent }} />
           )}
         </div>
 
-        {/* Correct Image Upload */}
-        <div className="mb-6">
-          <label className="block font-bold text-success mb-2">
-            ✅ Bild für "Richtig"
+        <div className="grid grid-cols-4 gap-1">
+          <label className={`${iconBtn} cursor-pointer`} title="Bild wählen" aria-label="Bild wählen">
+            <ImagePlus className="w-4 h-4" strokeWidth={2.25} />
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileChange(type, e.target.files?.[0] || null)}
+              className="hidden"
+            />
           </label>
-          <div className="space-y-3">
-            {/* Large preview */}
-            <div className="w-full h-48 rounded-xl border-2 border-dashed border-success/50 flex items-center justify-center overflow-hidden bg-success/10">
-              {preview.correct ? (
-                <img 
-                  src={preview.correct} 
-                  alt="Richtig Preview" 
-                  className="w-full h-full object-contain" 
-                />
-              ) : (
-                <div className="text-center">
-                  <span className="text-6xl block mb-2">😊</span>
-                  <span className="text-sm text-muted-foreground">Kein Bild ausgewählt</span>
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <label className="flex-1 px-4 py-2 bg-btn-blue text-white rounded-lg text-sm font-bold hover:bg-btn-blue/80 transition-all cursor-pointer text-center">
-                  📁 Bild auswählen
-                  <input
-                    ref={correctInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange('correct', e.target.files?.[0] || null)}
-                    className="hidden"
-                  />
-                </label>
-                <button
-                  onClick={() => handleCameraCapture('correct')}
-                  className="px-4 py-2 bg-btn-blue text-white rounded-lg text-sm font-bold hover:bg-btn-blue/80 transition-all"
-                  title="Kamera"
-                >
-                  📷 Kamera
-                </button>
-              </div>
-              {preview.correct && (
-                <button
-                  onClick={() => handleReset('correct')}
-                  className="w-full text-sm text-destructive hover:underline py-1"
-                >
-                  🗑️ Bild entfernen
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Wrong Image Upload */}
-        <div className="mb-6">
-          <label className="block font-bold text-destructive mb-2">
-            ❌ Bild für "Falsch"
-          </label>
-          <div className="space-y-3">
-            {/* Large preview */}
-            <div className="w-full h-48 rounded-xl border-2 border-dashed border-destructive/50 flex items-center justify-center overflow-hidden bg-destructive/10">
-              {preview.wrong ? (
-                <img 
-                  src={preview.wrong} 
-                  alt="Falsch Preview" 
-                  className="w-full h-full object-contain" 
-                />
-              ) : (
-                <div className="text-center">
-                  <span className="text-6xl block mb-2">😢</span>
-                  <span className="text-sm text-muted-foreground">Kein Bild ausgewählt</span>
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <label className="flex-1 px-4 py-2 bg-btn-blue text-white rounded-lg text-sm font-bold hover:bg-btn-blue/80 transition-all cursor-pointer text-center">
-                  📁 Bild auswählen
-                  <input
-                    ref={wrongInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange('wrong', e.target.files?.[0] || null)}
-                    className="hidden"
-                  />
-                </label>
-                <button
-                  onClick={() => handleCameraCapture('wrong')}
-                  className="px-4 py-2 bg-btn-blue text-white rounded-lg text-sm font-bold hover:bg-btn-blue/80 transition-all"
-                  title="Kamera"
-                >
-                  📷 Kamera
-                </button>
-              </div>
-              {preview.wrong && (
-                <button
-                  onClick={() => handleReset('wrong')}
-                  className="w-full text-sm text-destructive hover:underline py-1"
-                >
-                  🗑️ Bild entfernen
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Correct Audio Recording */}
-        <div className="mb-6">
-          <label className="block font-bold text-success mb-2">
-            🔊 Audio für "Richtig"
-          </label>
-          <div className="space-y-3">
-            <div className="w-full h-24 rounded-xl border-2 border-dashed border-success/50 flex items-center justify-center bg-success/10">
-              {audioPreview.correct ? (
-                <div className="flex flex-col items-center gap-2">
-                  <button
-                    onClick={() => handlePlayAudio('correct')}
-                    className="text-4xl hover:scale-110 transition-transform"
-                    title="Abspielen"
-                  >
-                    ▶️
-                  </button>
-                  <span className="text-xs text-muted-foreground">Klicke zum Abspielen</span>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <span className="text-4xl block mb-1">🔇</span>
-                  <span className="text-sm text-muted-foreground">Keine Aufnahme</span>
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              {!isRecording.correct ? (
-                <button
-                  onClick={() => handleStartRecording('correct')}
-                  className="w-full px-4 py-2 bg-success text-white rounded-lg text-sm font-bold hover:bg-success/80 transition-all"
-                >
-                  🎤 Aufnahme starten
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleStopRecording('correct')}
-                  className="w-full px-4 py-2 bg-destructive text-white rounded-lg text-sm font-bold hover:bg-destructive/80 transition-all animate-pulse"
-                >
-                  ⏹️ Aufnahme stoppen
-                </button>
-              )}
-              {audioPreview.correct && (
-                <button
-                  onClick={() => {
-                    setAudioPreview(prev => ({ ...prev, correct: null }));
-                    saveCustomAudio('correct', null);
-                  }}
-                  className="w-full text-sm text-destructive hover:underline py-1"
-                >
-                  🗑️ Audio entfernen
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Wrong Audio Recording */}
-        <div className="mb-8">
-          <label className="block font-bold text-destructive mb-2">
-            🔊 Audio für "Falsch"
-          </label>
-          <div className="space-y-3">
-            <div className="w-full h-24 rounded-xl border-2 border-dashed border-destructive/50 flex items-center justify-center bg-destructive/10">
-              {audioPreview.wrong ? (
-                <div className="flex flex-col items-center gap-2">
-                  <button
-                    onClick={() => handlePlayAudio('wrong')}
-                    className="text-4xl hover:scale-110 transition-transform"
-                    title="Abspielen"
-                  >
-                    ▶️
-                  </button>
-                  <span className="text-xs text-muted-foreground">Klicke zum Abspielen</span>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <span className="text-4xl block mb-1">🔇</span>
-                  <span className="text-sm text-muted-foreground">Keine Aufnahme</span>
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              {!isRecording.wrong ? (
-                <button
-                  onClick={() => handleStartRecording('wrong')}
-                  className="w-full px-4 py-2 bg-destructive text-white rounded-lg text-sm font-bold hover:bg-destructive/80 transition-all"
-                >
-                  🎤 Aufnahme starten
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleStopRecording('wrong')}
-                  className="w-full px-4 py-2 bg-destructive text-white rounded-lg text-sm font-bold hover:bg-destructive/80 transition-all animate-pulse"
-                >
-                  ⏹️ Aufnahme stoppen
-                </button>
-              )}
-              {audioPreview.wrong && (
-                <button
-                  onClick={() => {
-                    setAudioPreview(prev => ({ ...prev, wrong: null }));
-                    saveCustomAudio('wrong', null);
-                  }}
-                  className="w-full text-sm text-destructive hover:underline py-1"
-                >
-                  🗑️ Audio entfernen
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Save Button */}
-        <div className="flex gap-3">
           <button
+            type="button"
+            onClick={() => handleCameraCapture(type)}
+            className={iconBtn}
+            title="Kamera"
+            aria-label="Kamera"
+          >
+            <Camera className="w-4 h-4" strokeWidth={2.25} />
+          </button>
+          {!recording ? (
+            <button
+              type="button"
+              onClick={() => handleStartRecording(type)}
+              className={iconBtn}
+              title="Audio aufnehmen"
+              aria-label="Audio aufnehmen"
+            >
+              <Mic className="w-4 h-4" strokeWidth={2.25} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleStopRecording(type)}
+              className={`${iconBtn} !bg-red-500 !text-white !border-red-500 animate-pulse`}
+              title="Stoppen"
+              aria-label="Aufnahme stoppen"
+            >
+              <Square className="w-3.5 h-3.5" fill="currentColor" strokeWidth={0} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => (hasAudio ? handlePlayAudio(type) : undefined)}
+            disabled={!hasAudio}
+            className={iconBtn}
+            title="Audio abspielen"
+            aria-label="Audio abspielen"
+          >
+            <Play className="w-4 h-4" strokeWidth={2.25} />
+          </button>
+        </div>
+
+        {(hasImage || hasAudio) && (
+          <button
+            type="button"
+            onClick={() => handleReset(type)}
+            className="flex items-center justify-center gap-1 text-[11px] font-semibold text-[#999] py-0.5"
+          >
+            <Trash2 className="w-3 h-3" />
+            Zurücksetzen
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#2D3561]/35 backdrop-blur-[2px]"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="bg-white w-full max-w-[400px] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[min(92dvh,640px)]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="parent-settings-title"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pt-3.5 pb-2 shrink-0">
+          <h2 id="parent-settings-title" className="text-lg font-bold text-[#2D3561]">
+            Einstellungen
+          </h2>
+          <button
+            type="button"
             onClick={onClose}
-            className="flex-1 py-3 px-4 rounded-xl border-2 border-border text-foreground font-bold transition-all hover:bg-muted"
+            className="w-9 h-9 rounded-full bg-[#F7F4FB] flex items-center justify-center text-[#2D3561] active:scale-95"
+            aria-label="Schließen"
+          >
+            <X className="w-4 h-4" strokeWidth={2.5} />
+          </button>
+        </div>
+
+        {/* Body — compact, usually no scroll on phones */}
+        <div className="px-4 pb-2 flex flex-col gap-3.5 overflow-y-auto min-h-0">
+          <div>
+            <div className="text-[11px] font-semibold tracking-wide text-[#999] mb-1.5 uppercase">
+              Alter
+            </div>
+            <div className="grid grid-cols-8 gap-1">
+              {ages.map((age) => (
+                <button
+                  key={age}
+                  type="button"
+                  onClick={() => setSelectedAge(age)}
+                  className={`h-9 rounded-lg text-sm font-bold transition-all active:scale-95 ${
+                    selectedAge === age
+                      ? 'bg-[#7C3AED] text-white shadow-sm'
+                      : 'bg-[#F7F4FB] text-[#2D3561]'
+                  }`}
+                >
+                  {age}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[11px] font-semibold tracking-wide text-[#999] mb-1.5 uppercase">
+              Feedback (Bild & Audio)
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {renderFeedbackCard('correct')}
+              {renderFeedbackCard('wrong')}
+            </div>
+            <p className="text-[10px] text-[#AAA] mt-1.5 leading-snug">
+              Lokal gespeichert · funktioniert offline
+            </p>
+          </div>
+        </div>
+
+        {/* Sticky actions */}
+        <div
+          className="flex gap-2 px-4 pt-2 pb-3.5 shrink-0 border-t border-[#F0ECF7]"
+          style={{ paddingBottom: 'max(0.875rem, env(safe-area-inset-bottom))' }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 h-11 rounded-xl border border-[#E8E0F5] text-[#2D3561] font-bold text-sm active:scale-[0.98]"
           >
             Abbrechen
           </button>
           <button
+            type="button"
             onClick={handleSave}
-            className="flex-1 py-3 px-4 rounded-xl bg-btn-green text-white font-bold shadow-fun-sm btn-bounce"
+            className="flex-1 h-11 rounded-xl bg-[#10B981] text-white font-bold text-sm shadow-sm flex items-center justify-center gap-1.5 active:scale-[0.98]"
           >
-            💾 Speichern
+            <Save className="w-4 h-4" strokeWidth={2.25} />
+            Speichern
           </button>
         </div>
       </div>
 
-      {/* Camera Capture Modal */}
       {showCamera.correct && cameraType === 'correct' && (
         <CameraCapture
           onCapture={(image) => handleCameraCaptureComplete('correct', image)}

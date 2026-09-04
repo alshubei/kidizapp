@@ -1,19 +1,14 @@
 import { Shape, ShapeType, ShapeColor, ShapeChallenge, ShapeGameType, AgeRange } from '@/types/game';
+import {
+  ANIMAL_SHAPE_TYPES,
+  BASIC_SHAPE_TYPES,
+  SHAPE_EMOJIS,
+} from '@/components/ShapeGlyph';
 
-const SHAPES: ShapeType[] = ['circle', 'square', 'triangle', 'star', 'heart', 'diamond'];
 const COLORS: ShapeColor[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
 
 /** Seconds a kid has to tap the matching shapes on count questions. */
 export const COUNT_QUESTION_SECONDS = 5;
-
-const SHAPE_EMOJIS: Record<ShapeType, string> = {
-  circle: '⭕',
-  square: '⬜',
-  triangle: '🔺',
-  star: '⭐',
-  heart: '❤️',
-  diamond: '💎',
-};
 
 const COLOR_NAMES: Record<ShapeColor, string> = {
   red: 'Rot',
@@ -31,271 +26,337 @@ const SHAPE_NAMES: Record<ShapeType, string> = {
   star: 'Stern',
   heart: 'Herz',
   diamond: 'Raute',
+  cat: 'Katze',
+  dog: 'Hund',
+  rabbit: 'Hase',
+  bear: 'Bär',
+  fox: 'Fuchs',
+  frog: 'Frosch',
+  fish: 'Fisch',
+  bird: 'Vogel',
+  butterfly: 'Schmetterling',
+  bee: 'Biene',
+  duck: 'Ente',
+  pig: 'Schwein',
+  cow: 'Kuh',
+  mouse: 'Maus',
+  lion: 'Löwe',
+  panda: 'Panda',
+  chick: 'Küken',
+  turtle: 'Schildkröte',
+  whale: 'Wal',
+  unicorn: 'Einhorn',
+  owl: 'Eule',
+  penguin: 'Pinguin',
+  monkey: 'Affe',
+  horse: 'Pferd',
+  chicken: 'Huhn',
+  snail: 'Schnecke',
+  ladybug: 'Marienkäfer',
+  octopus: 'Krake',
+  giraffe: 'Giraffe',
+  dragon: 'Drache',
+};
+
+const SHAPE_NAMES_PLURAL: Record<ShapeType, string> = {
+  circle: 'Kreise',
+  square: 'Quadrate',
+  triangle: 'Dreiecke',
+  star: 'Sterne',
+  heart: 'Herzen',
+  diamond: 'Rauten',
+  cat: 'Katzen',
+  dog: 'Hunde',
+  rabbit: 'Hasen',
+  bear: 'Bären',
+  fox: 'Füchse',
+  frog: 'Frösche',
+  fish: 'Fische',
+  bird: 'Vögel',
+  butterfly: 'Schmetterlinge',
+  bee: 'Bienen',
+  duck: 'Enten',
+  pig: 'Schweine',
+  cow: 'Kühe',
+  mouse: 'Mäuse',
+  lion: 'Löwen',
+  panda: 'Pandas',
+  chick: 'Küken',
+  turtle: 'Schildkröten',
+  whale: 'Wale',
+  unicorn: 'Einhörner',
+  owl: 'Eulen',
+  penguin: 'Pinguine',
+  monkey: 'Affen',
+  horse: 'Pferde',
+  chicken: 'Hühner',
+  snail: 'Schnecken',
+  ladybug: 'Marienkäfer',
+  octopus: 'Kraken',
+  giraffe: 'Giraffen',
+  dragon: 'Drachen',
+};
+
+/** German noun gender for color adjective endings. */
+type Gender = 'm' | 'n' | 'f';
+
+const SHAPE_GENDER: Record<ShapeType, Gender> = {
+  circle: 'm',
+  square: 'n',
+  triangle: 'n',
+  star: 'm',
+  heart: 'n',
+  diamond: 'f',
+  cat: 'f',
+  dog: 'm',
+  rabbit: 'm',
+  bear: 'm',
+  fox: 'm',
+  frog: 'm',
+  fish: 'm',
+  bird: 'm',
+  butterfly: 'm',
+  bee: 'f',
+  duck: 'f',
+  pig: 'n',
+  cow: 'f',
+  mouse: 'f',
+  lion: 'm',
+  panda: 'm',
+  chick: 'n',
+  turtle: 'f',
+  whale: 'm',
+  unicorn: 'n',
+  owl: 'f',
+  penguin: 'm',
+  monkey: 'm',
+  horse: 'n',
+  chicken: 'n',
+  snail: 'f',
+  ladybug: 'm',
+  octopus: 'f',
+  giraffe: 'f',
+  dragon: 'm',
 };
 
 export const getShapeEmoji = (shape: ShapeType): string => SHAPE_EMOJIS[shape];
 export const getColorName = (color: ShapeColor): string => COLOR_NAMES[color];
 export const getShapeName = (shape: ShapeType): string => SHAPE_NAMES[shape];
+export const getShapeNamePlural = (shapeType: ShapeType): string => SHAPE_NAMES_PLURAL[shapeType];
 
-/**
- * Get just the shape name in plural form for count questions
- * (e.g., "Kreise", "Quadrate", "Dreiecke")
- */
-export const getShapeNamePlural = (shapeType: ShapeType): string => {
-  const plurals: Record<ShapeType, string> = {
-    circle: 'Kreise',
-    square: 'Quadrate',
-    triangle: 'Dreiecke',
-    star: 'Sterne',
-    heart: 'Herzen',
-    diamond: 'Rauten',
-  };
-  return plurals[shapeType];
+/** Definite article for German questions: den / die / das */
+export const getShapeArticleAccusative = (type: ShapeType): string => {
+  const g = SHAPE_GENDER[type];
+  if (g === 'm') return 'den';
+  if (g === 'f') return 'die';
+  return 'das';
 };
 
-/**
- * Get a German text description of a shape (e.g., "roter Kreis", "blaues Quadrat")
- * Handles German grammar for color adjectives based on noun gender
- */
+const colorAdjectiveFor = (colorName: string, gender: Gender): string => {
+  if (colorName === 'lila' || colorName === 'orange') return colorName;
+  if (gender === 'm') {
+    if (colorName === 'rot') return 'roter';
+    if (colorName === 'blau') return 'blauer';
+    if (colorName === 'grün') return 'grüner';
+    if (colorName === 'gelb') return 'gelber';
+  } else if (gender === 'n') {
+    if (colorName === 'rot') return 'rotes';
+    if (colorName === 'blau') return 'blaues';
+    if (colorName === 'grün') return 'grünes';
+    if (colorName === 'gelb') return 'gelbes';
+  } else {
+    if (colorName === 'rot') return 'rote';
+    if (colorName === 'blau') return 'blaue';
+    if (colorName === 'grün') return 'grüne';
+    if (colorName === 'gelb') return 'gelbe';
+  }
+  return colorName;
+};
+
 export const getShapeDescription = (shape: Shape): string => {
   const shapeName = getShapeName(shape.type);
   const colorName = getColorName(shape.color).toLowerCase();
-  
-  // German grammar: color adjectives need to match noun gender
-  // Masculine: roter, blauer, grüner, gelber, lila, oranger
-  // Neuter: rotes, blaues, grünes, gelbes, lila, oranges
-  // Feminine: rote, blaue, grüne, gelbe, lila, orange
-  // Some colors (lila, orange) don't change
-  
-  let colorAdjective = colorName;
-  
-  // Determine gender and adjust adjective ending
-  if (shape.type === 'circle' || shape.type === 'star') {
-    // Masculine: Kreis, Stern
-    if (colorName === 'rot') colorAdjective = 'roter';
-    else if (colorName === 'blau') colorAdjective = 'blauer';
-    else if (colorName === 'grün') colorAdjective = 'grüner';
-    else if (colorName === 'gelb') colorAdjective = 'gelber';
-    // lila and orange stay the same
-  } else if (shape.type === 'square' || shape.type === 'triangle' || shape.type === 'heart') {
-    // Neuter: Quadrat, Dreieck, Herz
-    if (colorName === 'rot') colorAdjective = 'rotes';
-    else if (colorName === 'blau') colorAdjective = 'blaues';
-    else if (colorName === 'grün') colorAdjective = 'grünes';
-    else if (colorName === 'gelb') colorAdjective = 'gelbes';
-    // lila and orange stay the same
-  } else {
-    // Feminine: Raute
-    if (colorName === 'rot') colorAdjective = 'rote';
-    else if (colorName === 'blau') colorAdjective = 'blaue';
-    else if (colorName === 'grün') colorAdjective = 'grüne';
-    else if (colorName === 'gelb') colorAdjective = 'gelbe';
-    // lila and orange stay the same
-  }
-  
-  return `${colorAdjective} ${shapeName}`;
+  const gender = SHAPE_GENDER[shape.type];
+  return `${colorAdjectiveFor(colorName, gender)} ${shapeName}`;
 };
 
-export const createRandomShape = (): Shape => ({
-  type: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+const shapesForAge = (age: AgeRange): ShapeType[] => {
+  if (age <= 4) return BASIC_SHAPE_TYPES;
+  // Age 5+: geometry + animals
+  return [...BASIC_SHAPE_TYPES, ...ANIMAL_SHAPE_TYPES];
+};
+
+export const createRandomShape = (pool: ShapeType[] = BASIC_SHAPE_TYPES): Shape => ({
+  type: pool[Math.floor(Math.random() * pool.length)],
   color: COLORS[Math.floor(Math.random() * COLORS.length)],
 });
 
-export const createShapes = (count: number): Shape[] => {
-  return Array.from({ length: count }, () => createRandomShape());
+export const createShapes = (count: number, pool: ShapeType[] = BASIC_SHAPE_TYPES): Shape[] => {
+  return Array.from({ length: count }, () => createRandomShape(pool));
 };
 
-/**
- * Create shapes that exclude a specific shape type
- */
-export const createShapesExcludingType = (count: number, excludeType: ShapeType): Shape[] => {
-  const availableShapes = SHAPES.filter(s => s !== excludeType);
+export const createShapesExcludingType = (
+  count: number,
+  excludeType: ShapeType,
+  pool: ShapeType[] = BASIC_SHAPE_TYPES
+): Shape[] => {
+  const available = pool.filter(s => s !== excludeType);
+  const usePool = available.length > 0 ? available : pool;
   return Array.from({ length: count }, () => ({
-    type: availableShapes[Math.floor(Math.random() * availableShapes.length)],
+    type: usePool[Math.floor(Math.random() * usePool.length)],
     color: COLORS[Math.floor(Math.random() * COLORS.length)],
   }));
 };
 
 /**
- * Generate age-appropriate shape challenges
+ * Generate age-appropriate shape challenges.
+ * Ages 3–4: basic geometry. Age 5+: geometry + common animals.
  */
 export const generateShapeChallenge = (age: AgeRange): ShapeChallenge => {
-  // For ages 3-4: Very simple - matching and counting 1-3
-  // For ages 5-6: Slightly harder - counting 1-5, finding shapes
-  
-  if (age <= 4) {
-    // Ages 3-4: Simple matching and counting
-    const gameType: ShapeGameType = Math.random() > 0.3 ? 'count' : 'match';
-    
-    if (gameType === 'match') {
-      const targetShape = createRandomShape();
-      const shapes = [targetShape, ...createShapes(2)];
-      // Shuffle
-      shapes.sort(() => Math.random() - 0.5);
-      
-      return {
-        type: 'match',
-        question: `Finde das`,
-        questionShape: targetShape,
-        shapes,
-        correctAnswer: targetShape,
-        options: shapes,
-      };
-    } else {
-      // Count game
-      const count = Math.floor(Math.random() * 3) + 1; // 1-3
-      const shapeType = SHAPES[Math.floor(Math.random() * 3)]; // Simple shapes only
-      const shapes: Shape[] = [];
-      // Add exactly 'count' target shapes
-      for (let i = 0; i < count; i++) {
-        shapes.push({ type: shapeType, color: COLORS[Math.floor(Math.random() * COLORS.length)] });
-      }
-      // Add some other shapes (excluding the target type to avoid confusion)
-      const otherShapes = createShapesExcludingType(5 - count, shapeType);
-      shapes.push(...otherShapes);
-      shapes.sort(() => Math.random() - 0.5);
-      
-      // Create a sample shape of the target type for display in question
-      const sampleShape: Shape = { type: shapeType, color: COLORS[0] };
-      return {
-        type: 'count',
-        question: `Wie viele`,
-        questionShape: sampleShape,
-        questionSuffix: 'siehst du?',
-        shapes,
-        correctAnswer: count,
-      };
-    }
-  } else {
-    // Ages 5-6: More variety
-    const gameTypes: ShapeGameType[] = ['match', 'count', 'find', 'color-match'];
-    const gameType = gameTypes[Math.floor(Math.random() * gameTypes.length)];
-    
-    if (gameType === 'match') {
-      const targetShape = createRandomShape();
-      const shapes = [targetShape, ...createShapes(3)];
-      shapes.sort(() => Math.random() - 0.5);
-      
-      return {
-        type: 'match',
-        question: `Finde das`,
-        questionShape: targetShape,
-        shapes,
-        correctAnswer: targetShape,
-        options: shapes,
-      };
-    } else if (gameType === 'count') {
-      const count = Math.floor(Math.random() * 4) + 1; // 1-4
-      const shapeType = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-      const shapes: Shape[] = [];
-      // Add exactly 'count' target shapes
-      for (let i = 0; i < count; i++) {
-        shapes.push({ type: shapeType, color: COLORS[Math.floor(Math.random() * COLORS.length)] });
-      }
-      // Add some other shapes (excluding the target type to avoid confusion)
-      const otherShapes = createShapesExcludingType(6 - count, shapeType);
-      shapes.push(...otherShapes);
-      shapes.sort(() => Math.random() - 0.5);
-      
-      const sampleShape: Shape = { type: shapeType, color: COLORS[0] };
-      return {
-        type: 'count',
-        question: `Wie viele`,
-        questionShape: sampleShape,
-        questionSuffix: 'siehst du?',
-        shapes,
-        correctAnswer: count,
-      };
-    } else if (gameType === 'find') {
-      const targetShape = createRandomShape();
-      const shapes = createShapes(8);
-      // Add target shape somewhere
-      const targetIndex = Math.floor(Math.random() * shapes.length);
-      shapes[targetIndex] = targetShape;
-      
-      return {
-        type: 'find',
-        question: `Klicke auf das`,
-        questionShape: targetShape,
-        shapes,
-        correctAnswer: targetShape,
-      };
-    } else {
-      // color-match
-      const targetColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-      const otherColors = COLORS.filter(c => c !== targetColor);
-      const shapes: Shape[] = [];
-      
-      // Create one shape with target color (this is the correct answer)
-      // Make sure we create a new object, not a reference
-      const correctShape: Shape = { 
-        type: SHAPES[Math.floor(Math.random() * SHAPES.length)], 
-        color: targetColor 
-      };
-      shapes.push(correctShape);
-      
-      // Create exactly 5 other shapes with colors that are NOT the target color
-      // Shuffle otherColors to get variety
-      const shuffledOtherColors = [...otherColors].sort(() => Math.random() - 0.5);
-      for (let i = 0; i < 5; i++) {
-        // Cycle through other colors, ensuring we don't use target color
-        const otherColor = shuffledOtherColors[i % shuffledOtherColors.length];
-        const otherShape: Shape = {
-          type: SHAPES[Math.floor(Math.random() * SHAPES.length)],
-          color: otherColor
-        };
-        shapes.push(otherShape);
-      }
-      
-      // Verify exactly one shape has the target color before shuffling
-      const shapesWithTargetColor = shapes.filter(s => s.color === targetColor);
-      if (shapesWithTargetColor.length !== 1) {
-        console.error('Color-match: Expected 1 shape with target color, found:', shapesWithTargetColor.length);
-        console.error('Target color:', targetColor);
-        console.error('All shapes:', shapes.map(s => ({ type: s.type, color: s.color })));
-        // Regenerate to fix the issue
-        return generateShapeChallenge(age);
-      }
-      
-      // Shuffle the shapes array
-      shapes.sort(() => Math.random() - 0.5);
-      
-      // Create a fresh copy of shapes array for options to avoid reference issues
-      const options = shapes.map(s => ({ ...s }));
-      
-      // Final verification after shuffle
-      const finalShapesWithTargetColor = shapes.filter(s => s.color === targetColor);
-      if (finalShapesWithTargetColor.length !== 1) {
-        console.error('Color-match: After shuffle, expected 1 shape with target color, found:', finalShapesWithTargetColor.length);
-        return generateShapeChallenge(age);
-      }
-      
-      // Create a sample shape with the target color for display in question
-      const questionShape: Shape = {
-        type: SHAPES[Math.floor(Math.random() * SHAPES.length)],
-        color: targetColor
-      };
-      
-      const challenge = {
-        type: 'color-match' as const,
-        question: `Finde die ${getColorName(targetColor)}e Form`,
-        questionShape: questionShape,
-        questionSuffix: '!',
-        shapes: shapes.map(s => ({ ...s })), // Create fresh copy
-        correctAnswer: targetColor, // Store the target color as the answer
-        options: options, // Use the fresh copy
-      };
-      
-      // Debug log to verify challenge is created correctly
-      console.log('Generated color-match challenge:', {
-        targetColor,
-        targetColorName: getColorName(targetColor),
-        shapes: challenge.shapes.map(s => ({ type: s.type, color: s.color })),
-        shapesWithTargetColor: challenge.shapes.filter(s => s.color === targetColor).length
-      });
-      
-      return challenge;
-    }
-  }
-};
+  const pool = shapesForAge(age);
 
+  if (age <= 4) {
+    const gameType: ShapeGameType = Math.random() > 0.3 ? 'count' : 'match';
+
+    if (gameType === 'match') {
+      const targetShape = createRandomShape(pool);
+      const shapes = [targetShape, ...createShapes(2, pool)];
+      shapes.sort(() => Math.random() - 0.5);
+
+      return {
+        type: 'match',
+        question: `Finde ${getShapeArticleAccusative(targetShape.type)}`,
+        questionShape: targetShape,
+        shapes,
+        correctAnswer: targetShape,
+        options: shapes,
+      };
+    }
+
+    const count = Math.floor(Math.random() * 3) + 1;
+    const simplePool = BASIC_SHAPE_TYPES.slice(0, 3);
+    const shapeType = simplePool[Math.floor(Math.random() * simplePool.length)];
+    const shapes: Shape[] = [];
+    for (let i = 0; i < count; i++) {
+      shapes.push({ type: shapeType, color: COLORS[Math.floor(Math.random() * COLORS.length)] });
+    }
+    shapes.push(...createShapesExcludingType(5 - count, shapeType, pool));
+    shapes.sort(() => Math.random() - 0.5);
+
+    return {
+      type: 'count',
+      question: `Wie viele`,
+      questionShape: { type: shapeType, color: COLORS[0] },
+      questionSuffix: 'siehst du?',
+      shapes,
+      correctAnswer: count,
+    };
+  }
+
+  // Age 5+: richer pool with animals; prefer animal targets often
+  const gameTypes: ShapeGameType[] = ['match', 'count', 'find', 'color-match'];
+  const gameType = gameTypes[Math.floor(Math.random() * gameTypes.length)];
+
+  const pickTargetType = (): ShapeType => {
+    // ~65% animals so the new set shows up often
+    if (Math.random() < 0.65) {
+      return ANIMAL_SHAPE_TYPES[Math.floor(Math.random() * ANIMAL_SHAPE_TYPES.length)];
+    }
+    return BASIC_SHAPE_TYPES[Math.floor(Math.random() * BASIC_SHAPE_TYPES.length)];
+  };
+
+  if (gameType === 'match') {
+    const targetType = pickTargetType();
+    const targetShape: Shape = {
+      type: targetType,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    };
+    const distractors = createShapesExcludingType(3, targetType, pool);
+    const shapes = [targetShape, ...distractors].sort(() => Math.random() - 0.5);
+
+    return {
+      type: 'match',
+      question: `Finde ${getShapeArticleAccusative(targetType)}`,
+      questionShape: targetShape,
+      shapes,
+      correctAnswer: targetShape,
+      options: shapes,
+    };
+  }
+
+  if (gameType === 'count') {
+    const count = Math.floor(Math.random() * 4) + 1;
+    const shapeType = pickTargetType();
+    const shapes: Shape[] = [];
+    for (let i = 0; i < count; i++) {
+      shapes.push({ type: shapeType, color: COLORS[Math.floor(Math.random() * COLORS.length)] });
+    }
+    shapes.push(...createShapesExcludingType(Math.max(2, 6 - count), shapeType, pool));
+    shapes.sort(() => Math.random() - 0.5);
+
+    return {
+      type: 'count',
+      question: `Wie viele`,
+      questionShape: { type: shapeType, color: COLORS[0] },
+      questionSuffix: 'siehst du?',
+      shapes: shapes.slice(0, 6),
+      correctAnswer: count,
+    };
+  }
+
+  if (gameType === 'find') {
+    const targetType = pickTargetType();
+    const targetShape: Shape = {
+      type: targetType,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    };
+    const shapes = createShapesExcludingType(3, targetType, pool);
+    shapes.push(targetShape);
+    shapes.sort(() => Math.random() - 0.5);
+
+    return {
+      type: 'find',
+      question: `Klicke auf ${getShapeArticleAccusative(targetType)}`,
+      questionShape: targetShape,
+      shapes,
+      correctAnswer: targetShape,
+    };
+  }
+
+  // color-match — geometry only so the answer color is unambiguous (emojis keep fixed colors)
+  const geoPool = BASIC_SHAPE_TYPES;
+  const targetColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+  const otherColors = COLORS.filter(c => c !== targetColor);
+  const shapes: Shape[] = [
+    {
+      type: geoPool[Math.floor(Math.random() * geoPool.length)],
+      color: targetColor,
+    },
+  ];
+  const shuffledOtherColors = [...otherColors].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < 3; i++) {
+    shapes.push({
+      type: geoPool[Math.floor(Math.random() * geoPool.length)],
+      color: shuffledOtherColors[i % shuffledOtherColors.length],
+    });
+  }
+  shapes.sort(() => Math.random() - 0.5);
+
+  if (shapes.filter(s => s.color === targetColor).length !== 1) {
+    return generateShapeChallenge(age);
+  }
+
+  const options = shapes.map(s => ({ ...s }));
+  return {
+    type: 'color-match',
+    question: `Finde die ${getColorName(targetColor)}e Form`,
+    questionShape: {
+      type: geoPool[Math.floor(Math.random() * geoPool.length)],
+      color: targetColor,
+    },
+    questionSuffix: '!',
+    shapes: shapes.map(s => ({ ...s })),
+    correctAnswer: targetColor,
+    options,
+  };
+};

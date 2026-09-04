@@ -15,6 +15,7 @@ import {
   getShapeDescription,
   getShapeNamePlural,
   getColorName,
+  getShapeArticleAccusative,
   COUNT_QUESTION_SECONDS,
 } from '@/lib/shapeGameUtils';
 import { clearGameProgress, getPlayerName } from '@/lib/gameProgressStorage';
@@ -396,8 +397,11 @@ const ShapeGame: React.FC = () => {
   const questionEyebrow = () => {
     if (currentChallenge.type === 'count') return 'WIE VIELE';
     if (currentChallenge.type === 'color-match') return 'FINDE DIE';
-    if (currentChallenge.type === 'find') return 'KLICKE AUF DAS';
-    return 'FINDE DAS';
+    const article = currentChallenge.questionShape
+      ? getShapeArticleAccusative(currentChallenge.questionShape.type).toUpperCase()
+      : 'DAS';
+    if (currentChallenge.type === 'find') return `KLICKE AUF ${article}`;
+    return `FINDE ${article}`;
   };
 
   const questionHeadline = () => {

@@ -1,19 +1,23 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
-import { ScoreDisplay } from '@/components/ScoreDisplay';
 import { SoundToggle } from '@/components/SoundToggle';
 import { ParentSettings } from '@/components/ParentSettings';
 import { FeedbackDisplay } from '@/components/FeedbackDisplay';
-import { ShapeDisplay } from '@/components/ShapeDisplay';
-import { InlineShape } from '@/components/InlineShape';
 import { CountdownTimer } from '@/components/CountdownTimer';
+import { HeroShape, ShapeOptionCard } from '@/components/ShapeOptionCard';
 import { useShapeGameLogic } from '@/hooks/useShapeGameLogic';
 import { useSpeech } from '@/hooks/useSpeech';
 import { getAgeFromStorage, saveAgeToStorage } from '@/lib/ageUtils';
 import { loadAllCustomAssets } from '@/lib/assetStorage';
-import { getShapeDescription, getShapeNamePlural, COUNT_QUESTION_SECONDS } from '@/lib/shapeGameUtils';
-import { clearGameProgress } from '@/lib/gameProgressStorage';
+import {
+  getShapeDescription,
+  getShapeName,
+  getShapeNamePlural,
+  getColorName,
+  COUNT_QUESTION_SECONDS,
+} from '@/lib/shapeGameUtils';
+import { clearGameProgress, getPlayerName } from '@/lib/gameProgressStorage';
 import { AgeRange, Shape } from '@/types/game';
 import {
   AlertDialog,
@@ -357,64 +361,181 @@ const ShapeGame: React.FC = () => {
     return null;
   }
 
+  const levelInSet = (score % 5) + 1;
+  const progressPct = levelInSet * 20;
+  const encouragement =
+    streak >= 3 ? 'Sehr gut gemacht! 🌟' : streak >= 1 ? 'Weiter so! 💪' : 'Du schaffst das! 🌈';
+  const playerName = getPlayerName();
+
+  const questionEyebrow = () => {
+    if (currentChallenge.type === 'count') return 'WIE VIELE';
+    if (currentChallenge.type === 'color-match') return 'FINDE DIE';
+    if (currentChallenge.type === 'find') return 'KLICKE AUF DAS';
+    return 'FINDE DAS';
+  };
+
+  const questionHeadline = () => {
+    if (currentChallenge.type === 'count' && currentChallenge.questionShape) {
+      return getShapeNamePlural(currentChallenge.questionShape.type).toUpperCase();
+    }
+    if (currentChallenge.type === 'color-match') {
+      return `${getColorName(currentChallenge.correctAnswer as any)}E FORM`.toUpperCase();
+    }
+    if (currentChallenge.questionShape) {
+      return getShapeDescription(currentChallenge.questionShape).toUpperCase();
+    }
+    return currentChallenge.question.toUpperCase();
+  };
+
+  const headlineColor =
+    currentChallenge.questionShape?.color === 'yellow'
+      ? '#EAB308'
+      : currentChallenge.questionShape?.color === 'blue'
+        ? '#3B82F6'
+        : currentChallenge.questionShape?.color === 'green'
+          ? '#10B981'
+          : currentChallenge.questionShape?.color === 'purple'
+            ? '#7C3AED'
+            : currentChallenge.questionShape?.color === 'orange'
+              ? '#F97316'
+              : '#FF6B6B';
+
   const renderGameContent = () => {
     if (currentChallenge.type === 'match' || currentChallenge.type === 'color-match') {
-      // Shape matching game
       return (
-        <div className="space-y-3 sm:space-y-6">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-2 sm:mb-4">
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
-                <span>{currentChallenge.question}</span>
+        <>
+          <div className="text-center mb-6">
+            <div className="text-[13px] text-[#999] font-semibold mb-3 tracking-wide">
+              {questionEyebrow()}
+            </div>
+            <div className="text-[28px] font-bold mb-5" style={{ color: headlineColor }}>
+              {questionHeadline()}
+            </div>
+            <div className="flex justify-center gap-3 items-center mb-8">
               {currentChallenge.questionShape && (
-                <InlineShape 
-                  type={currentChallenge.questionShape.type} 
-                  color={currentChallenge.questionShape.color}
-                  size={60}
-                  usePlural={currentChallenge.type === 'count'}
-                />
+                <HeroShape shape={currentChallenge.questionShape} size={100} />
               )}
-                {currentChallenge.questionSuffix && (
-                  <span>{currentChallenge.questionSuffix}</span>
-                )}
-              </h2>
               <button
                 onClick={speakCurrentQuestion}
-                className="btn-bounce bg-btn-blue text-white p-2 sm:p-3 rounded-full shadow-fun-sm hover:bg-btn-blue/90 transition-all"
+                className="btn-bounce bg-[#60A5FA] text-white p-3 rounded-full shadow-md hover:scale-105 transition-all"
                 title="Frage nochmal hören"
                 aria-label="Frage nochmal hören"
               >
-                <span className="text-xl sm:text-2xl">🔊</span>
+                <span className="text-xl">🔊</span>
               </button>
             </div>
           </div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
+
+          <div className="grid grid-cols-2 gap-4">
             {currentChallenge.options?.map((option, index) => {
               const shape = option as Shape;
-              
-              // Debug: Log shapes for color-match challenges
-              if (currentChallenge.type === 'color-match' && index === 0) {
-                console.log('Color-match challenge shapes:', currentChallenge.options?.map((s: any) => ({ type: s.type, color: s.color })));
-                console.log('Target color:', currentChallenge.correctAnswer);
-              }
-              
-              // Ensure shape is valid
-              if (!shape || !shape.type || !shape.color) {
-                console.error('Invalid shape in options:', shape, 'at index:', index);
-              }
-              
-              const isSelected = selectedAnswer !== null && 
+              if (!shape?.type || !shape?.color) return null;
+              const isSelected =
+                selectedAnswer !== null &&
                 JSON.stringify(selectedAnswer) === JSON.stringify(option);
-              const isCorrect = feedback === 'correct' && isSelected;
-              const isWrong = feedback === 'wrong' && isSelected;
-              
               return (
-                <ShapeDisplay
+                <ShapeOptionCard
                   key={index}
                   shape={shape}
-                  size="lg"
                   onClick={() => handleAnswer(option)}
+                  isSelected={isSelected}
+                  isCorrect={feedback === 'correct' && isSelected}
+                  isWrong={feedback === 'wrong' && isSelected}
+                />
+              );
+            })}
+          </div>
+        </>
+      );
+    }
+
+    if (currentChallenge.type === 'count') {
+      const targetType = currentChallenge.questionShape?.type;
+      return (
+        <>
+          <div className="text-center mb-6">
+            <div className="text-[13px] text-[#999] font-semibold mb-3 tracking-wide">
+              {questionEyebrow()}
+            </div>
+            <div className="text-[28px] font-bold mb-4" style={{ color: headlineColor }}>
+              {questionHeadline()}
+            </div>
+            <div className="flex justify-center items-center gap-3 mb-6">
+              <CountdownTimer secondsLeft={secondsLeft} />
+              <button
+                onClick={speakCurrentQuestion}
+                className="btn-bounce bg-[#60A5FA] text-white p-3 rounded-full shadow-md"
+                title="Frage nochmal hören"
+                aria-label="Frage nochmal hören"
+              >
+                <span className="text-xl">🔊</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {currentChallenge.shapes.map((shape, index) => {
+              const isSelected = selectedShapeIndices.includes(index);
+              const isTarget = targetType ? shape.type === targetType : false;
+              return (
+                <ShapeOptionCard
+                  key={index}
+                  shape={shape}
+                  onClick={() => handleShapeToggle(index)}
+                  isSelected={isSelected && feedback === 'none'}
+                  isCorrect={feedback === 'correct' && isSelected}
+                  isWrong={
+                    feedback === 'wrong' &&
+                    ((isSelected && !isTarget) || (!isSelected && isTarget))
+                  }
+                  showLabel={false}
+                />
+              );
+            })}
+          </div>
+        </>
+      );
+    }
+
+    if (currentChallenge.type === 'find') {
+      return (
+        <>
+          <div className="text-center mb-6">
+            <div className="text-[13px] text-[#999] font-semibold mb-3 tracking-wide">
+              {questionEyebrow()}
+            </div>
+            <div className="text-[28px] font-bold mb-5" style={{ color: headlineColor }}>
+              {questionHeadline()}
+            </div>
+            <div className="flex justify-center gap-3 items-center mb-8">
+              {currentChallenge.questionShape && (
+                <HeroShape shape={currentChallenge.questionShape} size={100} />
+              )}
+              <button
+                onClick={speakCurrentQuestion}
+                className="btn-bounce bg-[#60A5FA] text-white p-3 rounded-full shadow-md"
+                title="Frage nochmal hören"
+                aria-label="Frage nochmal hören"
+              >
+                <span className="text-xl">🔊</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {currentChallenge.shapes.slice(0, 4).map((shape, index) => {
+              const isSelected =
+                selectedAnswer !== null &&
+                JSON.stringify(shape) === JSON.stringify(selectedAnswer);
+              const isCorrect =
+                feedback === 'correct' &&
+                JSON.stringify(shape) === JSON.stringify(currentChallenge.correctAnswer);
+              const isWrong = feedback === 'wrong' && isSelected;
+              return (
+                <ShapeOptionCard
+                  key={index}
+                  shape={shape}
+                  onClick={() => handleAnswer(shape)}
                   isSelected={isSelected}
                   isCorrect={isCorrect}
                   isWrong={isWrong}
@@ -422,213 +543,112 @@ const ShapeGame: React.FC = () => {
               );
             })}
           </div>
-        </div>
-      );
-    } else if (currentChallenge.type === 'count') {
-      // Counting game: tap each matching shape within the timer
-      const targetType = currentChallenge.questionShape?.type;
-      return (
-        <div className="space-y-3 sm:space-y-6">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-2 sm:mb-4 flex-wrap">
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
-                <span>{currentChallenge.question}</span>
-              {currentChallenge.questionShape && (
-                <InlineShape 
-                  type={currentChallenge.questionShape.type} 
-                  color={currentChallenge.questionShape.color}
-                  size={60}
-                  usePlural
-                />
-              )}
-                {currentChallenge.questionSuffix && (
-                  <span>{currentChallenge.questionSuffix}</span>
-                )}
-              </h2>
-              <CountdownTimer secondsLeft={secondsLeft} />
-              <button
-                onClick={speakCurrentQuestion}
-                className="btn-bounce bg-btn-blue text-white p-2 sm:p-3 rounded-full shadow-fun-sm hover:bg-btn-blue/90 transition-all"
-                title="Frage nochmal hören"
-                aria-label="Frage nochmal hören"
-              >
-                <span className="text-xl sm:text-2xl">🔊</span>
-              </button>
-            </div>
-          </div>
-          
-          <div className="flex flex-wrap justify-center gap-3 sm:gap-4 max-w-2xl mx-auto">
-            {currentChallenge.shapes.map((shape, index) => {
-              const isSelected = selectedShapeIndices.includes(index);
-              const isTarget = targetType ? shape.type === targetType : false;
-              const showCorrect = feedback === 'correct' && isSelected;
-              const showWrong =
-                feedback === 'wrong' &&
-                ((isSelected && !isTarget) || (!isSelected && isTarget));
-
-              return (
-                <ShapeDisplay
-                  key={index}
-                  shape={shape}
-                  size="lg"
-                  onClick={() => handleShapeToggle(index)}
-                  isSelected={isSelected && feedback === 'none'}
-                  isCorrect={showCorrect}
-                  isWrong={showWrong}
-                />
-              );
-            })}
-          </div>
-        </div>
-      );
-    } else if (currentChallenge.type === 'find') {
-      // Find the shape game
-      return (
-        <div className="space-y-3 sm:space-y-6">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-2 sm:mb-4">
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
-                <span>{currentChallenge.question}</span>
-              {currentChallenge.questionShape && (
-                <InlineShape 
-                  type={currentChallenge.questionShape.type} 
-                  color={currentChallenge.questionShape.color}
-                  size={60}
-                  usePlural={currentChallenge.type === 'count'}
-                />
-              )}
-                {currentChallenge.questionSuffix && (
-                  <span>{currentChallenge.questionSuffix}</span>
-                )}
-              </h2>
-              <button
-                onClick={speakCurrentQuestion}
-                className="btn-bounce bg-btn-blue text-white p-2 sm:p-3 rounded-full shadow-fun-sm hover:bg-btn-blue/90 transition-all"
-                title="Frage nochmal hören"
-                aria-label="Frage nochmal hören"
-              >
-                <span className="text-xl sm:text-2xl">🔊</span>
-              </button>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 max-w-2xl mx-auto">
-            {currentChallenge.shapes.map((shape, index) => {
-              const isCorrect = feedback === 'correct' && 
-                JSON.stringify(shape) === JSON.stringify(currentChallenge.correctAnswer);
-              const isWrong = feedback === 'wrong' && 
-                selectedAnswer !== null &&
-                JSON.stringify(shape) === JSON.stringify(selectedAnswer);
-              
-              return (
-                <ShapeDisplay
-                  key={index}
-                  shape={shape}
-                  size="lg"
-                  onClick={() => handleAnswer(shape)}
-                  isCorrect={isCorrect}
-                  isWrong={isWrong}
-                />
-              );
-            })}
-          </div>
-        </div>
+        </>
       );
     }
-    
+
     return null;
   };
 
   return (
     <div
-      className="min-h-dvh h-dvh gradient-warm flex flex-col px-4 overflow-hidden"
+      className="min-h-dvh h-dvh overflow-hidden font-fredoka"
       style={{
-        paddingTop: 'max(1rem, env(safe-area-inset-top))',
-        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+        background: 'linear-gradient(135deg, #FFF9E6 0%, #F0E6FF 100%)',
+        paddingTop: 'max(2rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(7.5rem, calc(env(safe-area-inset-bottom) + 5.5rem))',
+        paddingLeft: 16,
+        paddingRight: 16,
       }}
     >
-      <div className="max-w-4xl w-full mx-auto flex flex-col flex-1 min-h-0 justify-center gap-3 sm:gap-5">
+      <div className="max-w-[380px] mx-auto h-full flex flex-col min-h-0">
         {/* Header */}
-        <header className="flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl sm:text-4xl">🔷</span>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-                Formen-Spaß
-              </h1>
-              {childAge && (
-                <div className="flex items-center gap-1 bg-btn-purple/20 px-3 py-1 rounded-full">
-                  <span className="text-sm">👶</span>
-                  <span className="text-sm font-bold text-btn-purple">
-                    Alter: {childAge} Jahre
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-4">
+        <div className="text-center mb-6 shrink-0 relative">
+          <div className="absolute right-0 top-0 flex gap-2">
             <button
               onClick={() => setShowResetDialog(true)}
-              className="btn-bounce bg-card p-2 rounded-full shadow-fun-sm"
+              className="bg-white/80 p-2 rounded-full shadow-sm"
               title="Spiel zurücksetzen"
             >
-              <span className="text-xl">🔄</span>
+              <span className="text-lg">🔄</span>
             </button>
             <SoundToggle isMuted={isMuted} onToggle={toggleMute} />
             <button
               onClick={() => setShowSettings(true)}
-              className="btn-bounce bg-card p-2 rounded-full shadow-fun-sm"
+              className="bg-white/80 p-2 rounded-full shadow-sm"
               title="Einstellungen"
             >
-              <span className="text-xl">⚙️</span>
+              <span className="text-lg">⚙️</span>
             </button>
           </div>
-        </header>
-
-        {/* Score Display */}
-        <div className="flex justify-center shrink-0">
-          <ScoreDisplay score={score} streak={streak} onLevelClick={handleLevelClick} />
-        </div>
-
-        {/* Game Content — centered play area */}
-        <div className="mx-2 sm:mx-0 flex-1 min-h-0 flex items-center justify-center overflow-y-auto">
-          <div className="w-full py-2">
-            {renderGameContent()}
+          <div className="text-[42px] font-bold text-[#2D3561] leading-tight mb-1">
+            Form-Spaß! 🎨
+          </div>
+          <div className="text-sm text-[#666] font-medium">
+            Ab {childAge} Jahren{playerName ? ` · ${playerName}` : ''}
           </div>
         </div>
 
-        {/* Navigation Buttons - Always visible to allow navigation between questions */}
-        <div className="flex justify-center gap-4 shrink-0 pb-1">
+        {/* Progress card */}
+        <div className="bg-white rounded-2xl p-4 mb-6 text-center shadow-[0_2px_8px_rgba(0,0,0,0.06)] shrink-0">
+          <div className="text-[12px] text-[#999] mb-2 font-semibold uppercase tracking-wide">
+            Level {levelInSet} von 5
+          </div>
+          <div className="h-3 bg-[#E8E8E8] rounded-lg overflow-hidden mb-2">
+            <div
+              className="h-full rounded-lg transition-all duration-300"
+              style={{
+                width: `${progressPct}%`,
+                background: 'linear-gradient(90deg, #FF6B6B, #FFD93D)',
+              }}
+            />
+          </div>
+          <div className="text-[13px] text-[#666]">{encouragement}</div>
+          {score > 0 && (
+            <button
+              type="button"
+              onClick={() => handleLevelClick(Math.max(1, score))}
+              className="mt-2 text-xs text-[#7C3AED] font-semibold"
+            >
+              ⭐ {score} Punkte
+            </button>
+          )}
+        </div>
+
+        {/* Main game card */}
+        <div className="bg-white rounded-[20px] px-6 py-8 mb-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex-1 min-h-0 overflow-y-auto">
+          {renderGameContent()}
+        </div>
+      </div>
+
+      {/* Fixed bottom nav */}
+      <div
+        className="fixed bottom-0 left-0 right-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,1))',
+          padding: '24px 16px',
+          paddingBottom: 'max(32px, env(safe-area-inset-bottom))',
+        }}
+      >
+        <div className="max-w-[380px] mx-auto flex gap-3 pointer-events-auto">
           <button
             onClick={handlePrev}
             disabled={!hasPrevious}
-            className={`
-              btn-bounce bg-btn-purple text-white font-bold 
-              py-3 sm:py-4 px-6 sm:px-8 rounded-2xl 
-              text-lg sm:text-xl shadow-fun transition-all
-              disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-              flex items-center justify-center gap-2
-              ${feedback !== 'none' ? 'opacity-75' : ''}
-            `}
+            className="flex-1 py-[18px] text-white border-none rounded-2xl text-base font-bold shadow-[0_4px_8px_rgba(124,58,237,0.3)] transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: 'linear-gradient(135deg, #A78BFA, #7C3AED)' }}
           >
-            ⬅️ Zurück
+            ← Zurück
           </button>
           <button
             onClick={handleNext}
-            className={`
-              btn-bounce bg-btn-blue text-white font-bold 
-              py-3 sm:py-4 px-6 sm:px-8 rounded-2xl 
-              text-lg sm:text-xl shadow-fun transition-all
-              flex items-center justify-center gap-2
-              ${feedback !== 'none' ? 'opacity-75' : ''}
-            `}
+            className="flex-1 py-[18px] text-white border-none rounded-2xl text-base font-bold shadow-[0_4px_8px_rgba(16,185,129,0.3)] transition-transform active:scale-95"
+            style={{ background: 'linear-gradient(135deg, #34D399, #10B981)' }}
           >
-            Weiter ➡️
+            Weiter →
           </button>
         </div>
       </div>
 
-      {/* Feedback Overlay */}
       {feedback !== 'none' && (
         <FeedbackDisplay
           type={feedback}
@@ -639,7 +659,6 @@ const ShapeGame: React.FC = () => {
         />
       )}
 
-      {/* Parent Settings Modal */}
       <ParentSettings
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
@@ -651,7 +670,6 @@ const ShapeGame: React.FC = () => {
         onAgeChange={handleAgeChange}
       />
 
-      {/* Reset Game Confirmation Dialog */}
       <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

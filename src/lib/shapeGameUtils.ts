@@ -3,6 +3,7 @@ import {
   ANIMAL_SHAPE_TYPES,
   BASIC_SHAPE_TYPES,
   SHAPE_EMOJIS,
+  isAnimalShape,
 } from '@/components/ShapeGlyph';
 
 const COLORS: ShapeColor[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
@@ -175,6 +176,10 @@ const colorAdjectiveFor = (colorName: string, gender: Gender): string => {
 
 export const getShapeDescription = (shape: Shape): string => {
   const shapeName = getShapeName(shape.type);
+  // Animal emojis keep their own colors — never name a color in speech/UI text
+  if (isAnimalShape(shape.type)) {
+    return shapeName;
+  }
   const colorName = getColorName(shape.color).toLowerCase();
   const gender = SHAPE_GENDER[shape.type];
   return `${colorAdjectiveFor(colorName, gender)} ${shapeName}`;

@@ -110,16 +110,14 @@ const ShapeGame: React.FC = () => {
     // Build the full question text including shape and suffix
     let questionText = currentChallenge.question;
     
-    // If there's a shape in the question, add its description
+    // If there's a shape in the question, add its name/description
     if (currentChallenge.questionShape) {
-      // For count questions, use plural shape name without color
-      // For other questions, use full description with color
+      // Count: plural only. Animals: name only (emoji color ≠ spoken color).
+      // Geometry match/find: colored description.
       if (currentChallenge.type === 'count') {
-        const shapeNamePlural = getShapeNamePlural(currentChallenge.questionShape.type);
-        questionText += ' ' + shapeNamePlural;
+        questionText += ' ' + getShapeNamePlural(currentChallenge.questionShape.type);
       } else {
-        const shapeDescription = getShapeDescription(currentChallenge.questionShape);
-        questionText += ' ' + shapeDescription;
+        questionText += ' ' + getShapeDescription(currentChallenge.questionShape);
       }
     }
     

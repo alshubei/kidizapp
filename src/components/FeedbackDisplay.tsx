@@ -10,6 +10,8 @@ interface FeedbackDisplayProps {
   };
   onNext: () => void;
   onRetry: () => void;
+  /** When true, hide the next button — parent advances automatically. */
+  autoAdvance?: boolean;
 }
 
 export const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({
@@ -17,6 +19,7 @@ export const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({
   customImages,
   onNext,
   onRetry,
+  autoAdvance = false,
 }) => {
   const isCorrect = type === 'correct';
   const image = isCorrect 
@@ -28,7 +31,13 @@ export const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({
       fixed inset-0 z-50 flex items-center justify-center
       ${isCorrect ? 'bg-success/30' : 'bg-destructive/30'}
       backdrop-blur-md
-    `}>
+      px-4
+    `}
+    style={{
+      paddingTop: 'max(1rem, env(safe-area-inset-top))',
+      paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+    }}
+    >
       {/* Animated background cover */}
       <div className={`
         absolute inset-0
@@ -109,6 +118,11 @@ export const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({
           {/* Button */}
           <div className="mt-4 sm:mt-6">
             {isCorrect ? (
+              autoAdvance ? (
+                <p className="text-white/90 text-lg sm:text-xl font-semibold animate-pulse">
+                  Weiter geht’s…
+                </p>
+              ) : (
               <button
                 onClick={onNext}
                 className="
@@ -125,6 +139,7 @@ export const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({
               >
                 ➡️ Nächste Aufgabe
               </button>
+              )
             ) : (
               <button
                 onClick={onRetry}

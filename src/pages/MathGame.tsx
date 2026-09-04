@@ -357,10 +357,16 @@ const MathGame: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen gradient-warm py-4 sm:py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div
+      className="min-h-dvh h-dvh gradient-warm flex flex-col px-4 overflow-hidden"
+      style={{
+        paddingTop: 'max(1rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+      }}
+    >
+      <div className="max-w-2xl w-full mx-auto flex flex-col flex-1 min-h-0 justify-center gap-3 sm:gap-4 overflow-y-auto">
         {/* Header */}
-        <header className="flex items-center justify-between mb-6 sm:mb-8">
+        <header className="flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <span className="text-3xl sm:text-4xl">🧮</span>
             <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
@@ -397,12 +403,12 @@ const MathGame: React.FC = () => {
         </header>
 
         {/* Score Display */}
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center shrink-0">
           <ScoreDisplay score={score} streak={streak} onLevelClick={handleLevelClick} />
         </div>
 
         {/* Chalkboard */}
-        <div className="mb-6">
+        <div className="shrink-0">
           <div className="flex items-center justify-center gap-3 mb-2">
             <Chalkboard problem={currentProblem} />
             <button
@@ -417,7 +423,7 @@ const MathGame: React.FC = () => {
         </div>
 
         {/* Drawing Canvas */}
-        <div className="mb-6">
+        <div className="shrink-0">
           <DrawingCanvas 
             canvasRef={canvasRef as React.RefObject<HTMLCanvasElement>} 
             onClear={handleClearCanvas}
@@ -426,14 +432,14 @@ const MathGame: React.FC = () => {
 
         {/* Last recognized answer */}
         {lastAnswer !== null && feedback === 'none' && (
-          <div className="text-center mb-4">
+          <div className="text-center shrink-0">
             <span className="text-muted-foreground">Erkannt: </span>
             <span className="font-bold text-xl text-foreground">{lastAnswer}</span>
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center shrink-0">
           <GameButton
             variant="check"
             onClick={handleCheck}
@@ -443,7 +449,7 @@ const MathGame: React.FC = () => {
         </div>
 
         {/* Navigation Buttons - Always visible to allow navigation between questions */}
-        <div className="flex justify-center gap-4 mb-6 sm:mb-12">
+        <div className="flex justify-center gap-4 shrink-0 pb-1">
           <button
             onClick={handlePrev}
             disabled={!hasPrevious}
@@ -473,7 +479,7 @@ const MathGame: React.FC = () => {
         </div>
 
         {/* Footer hint */}
-        <p className="text-center text-muted-foreground text-sm mt-8">
+        <p className="text-center text-muted-foreground text-sm shrink-0">
           Schreibe die Zahl mit dem Finger oder der Maus! ✍️
         </p>
       </div>

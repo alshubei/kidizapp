@@ -7,7 +7,7 @@ interface ChallengeHistory {
   challenge: ShapeChallenge;
   score: number;
   streak: number;
-  selectedAnswer: number | Shape | null;
+  selectedAnswer: number | number[] | Shape | null;
   feedback: 'none' | 'correct' | 'wrong';
 }
 
@@ -79,8 +79,21 @@ export const useShapeGameLogic = (age: AgeRange) => {
       const correctShape = challenge.correctAnswer as { type: string; color: string };
       isCorrect = userShape.type === correctShape.type;
     } else if (challenge.type === 'count') {
-      // Count game: compare numbers
-      isCorrect = userAnswer === challenge.correctAnswer;
+      // Count game: kid tapped shape indices; must be exactly the target shapes
+      const selectedIndices = userAnswer as number[];
+      const targetType = challenge.questionShape?.type;
+      if (!targetType || !Array.isArray(selectedIndices)) {
+        isCorrect = false;
+      } else {
+        const targetIndices = challenge.shapes
+          .map((shape, index) => (shape.type === targetType ? index : -1))
+          .filter(index => index >= 0);
+        const selectedSorted = [...selectedIndices].sort((a, b) => a - b);
+        const targetSorted = [...targetIndices].sort((a, b) => a - b);
+        isCorrect =
+          selectedSorted.length === targetSorted.length &&
+          selectedSorted.every((index, i) => index === targetSorted[i]);
+      }
     }
     
     setState(prev => ({
@@ -93,7 +106,7 @@ export const useShapeGameLogic = (age: AgeRange) => {
     return isCorrect;
   }, [state.currentChallenge]);
 
-  const nextChallenge = useCallback((selectedAnswer: number | Shape | null = null) => {
+  const nextChallenge = useCallback((selectedAnswer: number | number[] | Shape | null = null) => {
     setState(prev => {
       // Save current state to history before moving forward
       const newHistory = history.slice(0, historyIndex + 1);
@@ -139,6 +152,22 @@ export const useShapeGameLogic = (age: AgeRange) => {
       ...prev,
       feedback: 'none',
     }));
+  }, []);
+
+  const markWrong = useCallback((): boolean => {
+    let applied = false;
+    setState(prev => {
+      if (prev.feedback !== 'none') {
+        return prev;
+      }
+      applied = true;
+      return {
+        ...prev,
+        feedback: 'wrong',
+        streak: 0,
+      };
+    });
+    return applied;
   }, []);
 
   const resetGame = useCallback(() => {
@@ -188,6 +217,7 @@ export const useShapeGameLogic = (age: AgeRange) => {
     nextChallenge,
     prevChallenge,
     retry,
+    markWrong,
     resetGame,
     updateAge,
     jumpToLevel,

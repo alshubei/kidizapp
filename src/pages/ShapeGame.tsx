@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { ScoreDisplay } from '@/components/ScoreDisplay';
@@ -7,11 +7,12 @@ import { ParentSettings } from '@/components/ParentSettings';
 import { FeedbackDisplay } from '@/components/FeedbackDisplay';
 import { ShapeDisplay } from '@/components/ShapeDisplay';
 import { InlineShape } from '@/components/InlineShape';
+import { CountdownTimer } from '@/components/CountdownTimer';
 import { useShapeGameLogic } from '@/hooks/useShapeGameLogic';
 import { useSpeech } from '@/hooks/useSpeech';
 import { getAgeFromStorage, saveAgeToStorage } from '@/lib/ageUtils';
 import { loadAllCustomAssets } from '@/lib/assetStorage';
-import { getShapeDescription, getShapeNamePlural } from '@/lib/shapeGameUtils';
+import { getShapeDescription, getShapeNamePlural, COUNT_QUESTION_SECONDS } from '@/lib/shapeGameUtils';
 import { clearGameProgress } from '@/lib/gameProgressStorage';
 import { AgeRange, Shape } from '@/types/game';
 import {
@@ -30,7 +31,8 @@ const ShapeGame: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [childAge, setChildAge] = useState<AgeRange | null>(null);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | Shape | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | number[] | Shape | null>(null);
+  const [selectedShapeIndices, setSelectedShapeIndices] = useState<number[]>([]);
   const [customImages, setCustomImages] = useState<{ correct: string | null; wrong: string | null }>({
     correct: null,
     wrong: null,
@@ -85,6 +87,10 @@ const ShapeGame: React.FC = () => {
     jumpToLevel,
     hasPrevious,
   } = useShapeGameLogic(childAge || 5);
+  const [secondsLeft, setSecondsLeft] = useState(COUNT_QUESTION_SECONDS);
+  const timedOutRef = useRef(false);
+  const selectedShapeIndicesRef = useRef<number[]>([]);
+  selectedShapeIndicesRef.current = selectedShapeIndices;
 
   const { isMuted, toggleMute, speakCorrect, speakWrong, speakQuestion } = useSpeech(customAudio);
 
@@ -131,6 +137,75 @@ const ShapeGame: React.FC = () => {
     }
   }, [currentChallenge, speakCurrentQuestion, feedback]);
 
+  const handleTimeout = useCallback(() => {
+    if (timedOutRef.current || feedback !== 'none') return;
+    timedOutRef.current = true;
+
+    const selected = selectedShapeIndicesRef.current;
+    setSelectedAnswer(selected);
+    const isCorrect = checkAnswer(selected);
+
+    if (isCorrect) {
+      speakCorrect();
+    } else {
+      speakWrong();
+    }
+  }, [feedback, checkAnswer, speakCorrect, speakWrong]);
+
+  // 5-second countdown on count questions only — ends the round and grades taps
+  useEffect(() => {
+    if (!childAge || currentChallenge?.type !== 'count' || feedback !== 'none') {
+      return;
+    }
+
+    timedOutRef.current = false;
+    setSecondsLeft(COUNT_QUESTION_SECONDS);
+    let remaining = COUNT_QUESTION_SECONDS;
+
+    const intervalId = window.setInterval(() => {
+      remaining -= 1;
+      setSecondsLeft(remaining);
+      if (remaining <= 0) {
+        window.clearInterval(intervalId);
+        handleTimeout();
+      }
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [childAge, currentChallenge, feedback, handleTimeout]);
+
+  // Clear shape selections when the challenge changes
+  useEffect(() => {
+    setSelectedShapeIndices([]);
+  }, [currentChallenge]);
+
+  // Auto-advance after a correct count answer (kid doesn't need to tap Next)
+  useEffect(() => {
+    if (feedback !== 'correct' || currentChallenge?.type !== 'count') {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      nextChallenge(selectedShapeIndicesRef.current);
+      setSelectedAnswer(null);
+      setSelectedShapeIndices([]);
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [feedback, currentChallenge?.type, nextChallenge]);
+
+  // After Ohh on a count miss, return to the same task automatically
+  useEffect(() => {
+    if (feedback !== 'wrong' || currentChallenge?.type !== 'count') {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      timedOutRef.current = false;
+      retry();
+      setSelectedAnswer(null);
+      setSelectedShapeIndices([]);
+    }, 2000);
+    return () => window.clearTimeout(timer);
+  }, [feedback, currentChallenge?.type, retry]);
+
   // Trigger confetti on 3-streak
   useEffect(() => {
     if (streak > 0 && streak % 3 === 0) {
@@ -150,9 +225,44 @@ const ShapeGame: React.FC = () => {
     }
   }, [childAge, updateAge]);
 
+  const handleShapeToggle = useCallback((index: number) => {
+    if (feedback !== 'none' || timedOutRef.current) return;
+    if (currentChallenge.type !== 'count') return;
+
+    const nextSelected = selectedShapeIndicesRef.current.includes(index)
+      ? selectedShapeIndicesRef.current.filter(i => i !== index)
+      : [...selectedShapeIndicesRef.current, index];
+
+    setSelectedShapeIndices(nextSelected);
+    selectedShapeIndicesRef.current = nextSelected;
+
+    const targetType = currentChallenge.questionShape?.type;
+    if (!targetType) return;
+
+    const targetIndices = currentChallenge.shapes
+      .map((shape, i) => (shape.type === targetType ? i : -1))
+      .filter(i => i >= 0);
+    const selectedSorted = [...nextSelected].sort((a, b) => a - b);
+    const targetSorted = [...targetIndices].sort((a, b) => a - b);
+    const isComplete =
+      selectedSorted.length === targetSorted.length &&
+      selectedSorted.every((i, n) => i === targetSorted[n]);
+
+    if (!isComplete) return;
+
+    timedOutRef.current = true;
+    setSelectedAnswer(nextSelected);
+    const isCorrect = checkAnswer(nextSelected);
+    if (isCorrect) {
+      speakCorrect();
+    } else {
+      speakWrong();
+    }
+  }, [feedback, currentChallenge, checkAnswer, speakCorrect, speakWrong]);
+
   const handleAnswer = useCallback((answer: number | Shape) => {
     if (feedback !== 'none') return;
-    
+
     setSelectedAnswer(answer);
     const isCorrect = checkAnswer(answer);
     
@@ -166,15 +276,21 @@ const ShapeGame: React.FC = () => {
   const handleNext = useCallback(() => {
     nextChallenge(selectedAnswer);
     setSelectedAnswer(null);
+    setSelectedShapeIndices([]);
   }, [nextChallenge, selectedAnswer]);
 
   const handlePrev = useCallback(() => {
     const result = prevChallenge();
     if (result) {
       setSelectedAnswer(result.selectedAnswer);
-      // Note: feedback is already restored by the hook
+      if (Array.isArray(result.selectedAnswer)) {
+        setSelectedShapeIndices(result.selectedAnswer);
+      } else {
+        setSelectedShapeIndices([]);
+      }
     } else {
       setSelectedAnswer(null);
+      setSelectedShapeIndices([]);
     }
   }, [prevChallenge]);
 
@@ -183,15 +299,23 @@ const ShapeGame: React.FC = () => {
       const result = jumpToLevel(level);
       if (result) {
         setSelectedAnswer(result.selectedAnswer);
+        if (Array.isArray(result.selectedAnswer)) {
+          setSelectedShapeIndices(result.selectedAnswer);
+        } else {
+          setSelectedShapeIndices([]);
+        }
       } else {
         setSelectedAnswer(null);
+        setSelectedShapeIndices([]);
       }
     }
   }, [jumpToLevel]);
 
   const handleRetry = useCallback(() => {
+    timedOutRef.current = false;
     retry();
     setSelectedAnswer(null);
+    setSelectedShapeIndices([]);
   }, [retry]);
 
   const handleImageChange = useCallback((type: 'correct' | 'wrong', image: string | null) => {
@@ -301,11 +425,12 @@ const ShapeGame: React.FC = () => {
         </div>
       );
     } else if (currentChallenge.type === 'count') {
-      // Counting game
+      // Counting game: tap each matching shape within the timer
+      const targetType = currentChallenge.questionShape?.type;
       return (
         <div className="space-y-3 sm:space-y-6">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-2 sm:mb-4">
+            <div className="flex items-center justify-center gap-3 mb-2 sm:mb-4 flex-wrap">
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
                 <span>{currentChallenge.question}</span>
               {currentChallenge.questionShape && (
@@ -313,13 +438,14 @@ const ShapeGame: React.FC = () => {
                   type={currentChallenge.questionShape.type} 
                   color={currentChallenge.questionShape.color}
                   size={60}
-                  usePlural={currentChallenge.type === 'count'}
+                  usePlural
                 />
               )}
                 {currentChallenge.questionSuffix && (
                   <span>{currentChallenge.questionSuffix}</span>
                 )}
               </h2>
+              <CountdownTimer secondsLeft={secondsLeft} />
               <button
                 onClick={speakCurrentQuestion}
                 className="btn-bounce bg-btn-blue text-white p-2 sm:p-3 rounded-full shadow-fun-sm hover:bg-btn-blue/90 transition-all"
@@ -331,56 +457,25 @@ const ShapeGame: React.FC = () => {
             </div>
           </div>
           
-          {/* Shapes display area - clearly non-interactive */}
-          <div className="bg-card/30 rounded-3xl p-4 sm:p-6 border-2 border-dashed border-muted-foreground/30 mb-4 sm:mb-8">
-            <p className="text-center text-sm text-muted-foreground mb-4 font-medium">
-              👆 Zähle die Formen oben
-            </p>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 max-w-2xl mx-auto">
-              {currentChallenge.shapes.map((shape, index) => (
-                <div key={index} className="opacity-75 pointer-events-none">
-                  <ShapeDisplay
-                    shape={shape}
-                    size="md"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Visual separator with arrow pointing to answer buttons */}
-          <div className="flex flex-col items-center gap-2 sm:gap-3 mb-2 sm:mb-4">
-            <div className="text-4xl animate-bounce">👇</div>
-            <p className="text-lg sm:text-xl font-bold text-foreground">
-              Klicke auf die richtige Zahl:
-            </p>
-          </div>
-          
-          {/* Number buttons - made more prominent and clearly interactive */}
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
-            {currentChallenge.options?.map((option) => {
-              const num = option as number;
-              const isSelected = selectedAnswer === num;
-              const isCorrect = feedback === 'correct' && isSelected;
-              const isWrong = feedback === 'wrong' && isSelected;
-              
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-4 max-w-2xl mx-auto">
+            {currentChallenge.shapes.map((shape, index) => {
+              const isSelected = selectedShapeIndices.includes(index);
+              const isTarget = targetType ? shape.type === targetType : false;
+              const showCorrect = feedback === 'correct' && isSelected;
+              const showWrong =
+                feedback === 'wrong' &&
+                ((isSelected && !isTarget) || (!isSelected && isTarget));
+
               return (
-                <button
-                  key={num}
-                  onClick={() => handleAnswer(num)}
-                  className={`
-                    w-16 h-16 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl font-bold text-3xl sm:text-5xl
-                    transition-all duration-200
-                    ${isSelected && isCorrect ? 'bg-success text-white ring-2 sm:ring-4 ring-success scale-110 shadow-2xl' : ''}
-                    ${isSelected && isWrong ? 'bg-destructive text-white ring-2 sm:ring-4 ring-destructive animate-shake shadow-2xl' : ''}
-                    ${!isSelected ? 'bg-btn-blue text-white hover:bg-btn-blue/90 hover:scale-110 active:scale-95 shadow-fun-lg ring-1 sm:ring-2 ring-btn-blue/50' : ''}
-                    ${isSelected && !isCorrect && !isWrong ? 'bg-btn-blue text-white ring-2 sm:ring-4 ring-btn-blue scale-110 shadow-2xl' : ''}
-                    cursor-pointer
-                    transform
-                  `}
-                >
-                  {num}
-                </button>
+                <ShapeDisplay
+                  key={index}
+                  shape={shape}
+                  size="lg"
+                  onClick={() => handleShapeToggle(index)}
+                  isSelected={isSelected && feedback === 'none'}
+                  isCorrect={showCorrect}
+                  isWrong={showWrong}
+                />
               );
             })}
           </div>
@@ -445,10 +540,16 @@ const ShapeGame: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen gradient-warm py-2 sm:py-4 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div
+      className="min-h-dvh h-dvh gradient-warm flex flex-col px-4 overflow-hidden"
+      style={{
+        paddingTop: 'max(1rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+      }}
+    >
+      <div className="max-w-4xl w-full mx-auto flex flex-col flex-1 min-h-0 justify-center gap-3 sm:gap-5">
         {/* Header */}
-        <header className="flex items-center justify-between mb-3 sm:mb-6">
+        <header className="flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <span className="text-3xl sm:text-4xl">🔷</span>
             <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
@@ -485,17 +586,19 @@ const ShapeGame: React.FC = () => {
         </header>
 
         {/* Score Display */}
-        <div className="flex justify-center mb-3 sm:mb-6">
+        <div className="flex justify-center shrink-0">
           <ScoreDisplay score={score} streak={streak} onLevelClick={handleLevelClick} />
         </div>
 
-        {/* Game Content */}
-        <div className="mb-3 sm:mb-6 mx-2 sm:mx-0">
-          {renderGameContent()}
+        {/* Game Content — centered play area */}
+        <div className="mx-2 sm:mx-0 flex-1 min-h-0 flex items-center justify-center overflow-y-auto">
+          <div className="w-full py-2">
+            {renderGameContent()}
+          </div>
         </div>
 
         {/* Navigation Buttons - Always visible to allow navigation between questions */}
-        <div className="flex justify-center gap-4 mt-3 sm:mt-12">
+        <div className="flex justify-center gap-4 shrink-0 pb-1">
           <button
             onClick={handlePrev}
             disabled={!hasPrevious}
@@ -532,6 +635,7 @@ const ShapeGame: React.FC = () => {
           customImages={customImages}
           onNext={handleNext}
           onRetry={handleRetry}
+          autoAdvance={feedback === 'correct' && currentChallenge?.type === 'count'}
         />
       )}
 

@@ -8,6 +8,8 @@ interface ShapeDisplayProps {
   isSelected?: boolean;
   isCorrect?: boolean;
   isWrong?: boolean;
+  /** Number or label drawn in the middle of the shape (count answers). */
+  label?: string | number;
 }
 
 const sizeClasses = {
@@ -138,6 +140,7 @@ export const ShapeDisplay: React.FC<ShapeDisplayProps> = ({
   isSelected = false,
   isCorrect = false,
   isWrong = false,
+  label,
 }) => {
   // Ensure shape has a valid color
   if (!shape || !shape.color || !colorValues[shape.color]) {
@@ -164,7 +167,23 @@ export const ShapeDisplay: React.FC<ShapeDisplayProps> = ({
   `;
 
   return (
-    <div className={baseClasses} onClick={onClick}>
+    <div
+      className={baseClasses}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-label={label != null ? `Zahl ${label}` : undefined}
+      onKeyDown={
+        onClick
+          ? (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+    >
       <svg
         width={sizeValue}
         height={sizeValue}
@@ -172,6 +191,23 @@ export const ShapeDisplay: React.FC<ShapeDisplayProps> = ({
         className="drop-shadow-lg"
       >
         {renderShape(shape?.type || 'circle', color, sizeValue)}
+        {label != null && (
+          <text
+            x={sizeValue / 2}
+            y={sizeValue / 2}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill="#ffffff"
+            stroke="#1f2937"
+            strokeWidth={Math.max(2, sizeValue / 24)}
+            paintOrder="stroke fill"
+            fontSize={sizeValue * 0.48}
+            fontWeight={800}
+            style={{ fontFamily: 'system-ui, sans-serif', userSelect: 'none' }}
+          >
+            {label}
+          </text>
+        )}
       </svg>
     </div>
   );

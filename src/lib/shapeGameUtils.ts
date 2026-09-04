@@ -3,6 +3,9 @@ import { Shape, ShapeType, ShapeColor, ShapeChallenge, ShapeGameType, AgeRange }
 const SHAPES: ShapeType[] = ['circle', 'square', 'triangle', 'star', 'heart', 'diamond'];
 const COLORS: ShapeColor[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
 
+/** Seconds a kid has to tap the matching shapes on count questions. */
+export const COUNT_QUESTION_SECONDS = 5;
+
 const SHAPE_EMOJIS: Record<ShapeType, string> = {
   circle: '⭕',
   square: '⬜',
@@ -122,7 +125,7 @@ export const generateShapeChallenge = (age: AgeRange): ShapeChallenge => {
   
   if (age <= 4) {
     // Ages 3-4: Simple matching and counting
-    const gameType: ShapeGameType = Math.random() > 0.5 ? 'match' : 'count';
+    const gameType: ShapeGameType = Math.random() > 0.3 ? 'count' : 'match';
     
     if (gameType === 'match') {
       const targetShape = createRandomShape();
@@ -161,7 +164,6 @@ export const generateShapeChallenge = (age: AgeRange): ShapeChallenge => {
         questionSuffix: 'siehst du?',
         shapes,
         correctAnswer: count,
-        options: [1, 2, 3, 4],
       };
     }
   } else {
@@ -195,12 +197,14 @@ export const generateShapeChallenge = (age: AgeRange): ShapeChallenge => {
       shapes.push(...otherShapes);
       shapes.sort(() => Math.random() - 0.5);
       
+      const sampleShape: Shape = { type: shapeType, color: COLORS[0] };
       return {
         type: 'count',
-        question: `Wie viele ${getShapeEmoji(shapeType)} siehst du?`,
+        question: `Wie viele`,
+        questionShape: sampleShape,
+        questionSuffix: 'siehst du?',
         shapes,
         correctAnswer: count,
-        options: [1, 2, 3, 4, 5],
       };
     } else if (gameType === 'find') {
       const targetShape = createRandomShape();

@@ -2,32 +2,17 @@ import React from 'react';
 import { Shape, ShapeColor, ShapeType } from '@/types/game';
 import { getShapeName } from '@/lib/shapeGameUtils';
 
-const GRADIENTS: Record<ShapeColor, string> = {
-  red: 'linear-gradient(135deg, #FF6B6B, #FF4757)',
-  yellow: 'linear-gradient(135deg, #FFE66D, #FFD93D)',
-  purple: 'linear-gradient(135deg, #A78BFA, #7C3AED)',
-  blue: 'linear-gradient(135deg, #60A5FA, #3B82F6)',
-  green: 'linear-gradient(135deg, #34D399, #10B981)',
-  orange: 'linear-gradient(135deg, #FB923C, #F97316)',
-};
-
 const colorValues: Record<ShapeColor, string> = {
   red: '#FF6B6B',
   blue: '#3B82F6',
   green: '#10B981',
-  yellow: '#FFD93D',
+  yellow: '#EAB308',
   purple: '#7C3AED',
   orange: '#F97316',
 };
 
-const lightText: Record<ShapeColor, boolean> = {
-  red: true,
-  blue: true,
-  green: true,
-  yellow: false,
-  purple: true,
-  orange: true,
-};
+const FRAME_BG = '#F7F4FB';
+const FRAME_BORDER = '#E8E0F5';
 
 const renderMiniShape = (type: ShapeType, color: string, size: number) => {
   const center = size / 2;
@@ -94,44 +79,76 @@ export const ShapeOptionCard: React.FC<ShapeOptionCardProps> = ({
   isWrong = false,
   showLabel = true,
 }) => {
-  const color = shape.color;
-  const fill = '#ffffff';
-  const textLight = lightText[color];
+  const fill = colorValues[shape.color];
 
   return (
     <button
       type="button"
       onClick={onClick}
       className={`
-        rounded-xl p-2.5 text-center transition-all duration-200 active:scale-95
+        w-full h-full min-h-0 min-w-0 rounded-xl text-center transition-all duration-200 active:scale-95
+        flex flex-col items-center justify-center gap-0.5 p-1.5
         ${onClick ? 'cursor-pointer hover:scale-[1.03]' : ''}
         ${isCorrect ? 'ring-[3px] ring-emerald-400' : ''}
         ${isWrong ? 'ring-[3px] ring-red-400 animate-shake' : ''}
-        ${isSelected && !isCorrect && !isWrong ? 'ring-[3px] ring-white/80' : ''}
+        ${isSelected && !isCorrect && !isWrong ? 'ring-[3px] ring-[#7C3AED]/40' : ''}
       `}
       style={{
-        background: GRADIENTS[color],
+        background: FRAME_BG,
         boxShadow: isSelected || isCorrect
-          ? `0 2px 6px rgba(0,0,0,0.08), 0 0 0 3px ${colorValues[color]}33`
-          : '0 2px 6px rgba(0,0,0,0.08)',
-        border: isSelected || isCorrect ? `2px solid ${colorValues[color]}` : '2px solid transparent',
+          ? `0 2px 6px rgba(45,53,97,0.08), 0 0 0 3px ${fill}33`
+          : '0 2px 6px rgba(45,53,97,0.06)',
+        border: isSelected || isCorrect ? `2px solid ${fill}` : `2px solid ${FRAME_BORDER}`,
       }}
       aria-label={getShapeName(shape.type)}
     >
-      <div className={`flex justify-center ${showLabel ? 'mb-1' : ''}`}>
-        <svg width={40} height={40} viewBox="0 0 40 40" className="drop-shadow-sm">
-          {renderMiniShape(shape.type, fill, 40)}
-        </svg>
-      </div>
+      <svg
+        viewBox="0 0 64 64"
+        className={`drop-shadow-sm ${showLabel ? 'w-[70%] h-[70%]' : 'w-[80%] h-[80%]'}`}
+        preserveAspectRatio="xMidYMid meet"
+      >
+        {renderMiniShape(shape.type, fill, 64)}
+      </svg>
       {showLabel && (
         <div
-          className="text-[10px] font-bold uppercase tracking-wide leading-tight"
-          style={{ color: textLight ? '#fff' : '#555' }}
+          className="text-[10px] font-bold uppercase tracking-wide leading-none shrink-0"
+          style={{ color: '#2D3561' }}
         >
           {getShapeName(shape.type)}
         </div>
       )}
     </button>
+  );
+};
+
+/** Square cells + identical row/column gaps (table-like); fits without scrolling. */
+export const ShapeGrid: React.FC<{
+  count: number;
+  children: React.ReactNode;
+  cols?: number;
+}> = ({ count, children, cols = 2 }) => {
+  const rows = Math.max(1, Math.ceil(count / cols));
+  const gapPx = 4;
+
+  return (
+    <div
+      className="flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden"
+      style={{ containerType: 'size' }}
+    >
+      <div
+        className="grid"
+        style={{
+          gap: gapPx,
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+          aspectRatio: `${cols} / ${rows}`,
+          width: `min(100cqw, calc((100cqh - ${(rows - 1) * gapPx}px) * ${cols} / ${rows} + ${(cols - 1) * gapPx}px))`,
+          height: `min(100cqh, calc((100cqw - ${(cols - 1) * gapPx}px) * ${rows} / ${cols} + ${(rows - 1) * gapPx}px))`,
+        }}
+      >
+        {children}
+      </div>
+    </div>
   );
 };
 
@@ -141,21 +158,25 @@ interface HeroShapeProps {
 }
 
 export const HeroShape: React.FC<HeroShapeProps> = ({ shape, size = 100 }) => {
+  const fill = colorValues[shape.color];
+  const inner = size * 0.72;
+
   return (
     <div
-      className="rounded-full flex items-center justify-center"
+      className="rounded-xl flex items-center justify-center shrink-0 aspect-square"
       style={{
         width: size,
         height: size,
-        background: GRADIENTS[shape.color],
-        boxShadow: `0 4px 12px ${colorValues[shape.color]}4D`,
+        background: FRAME_BG,
+        border: `2px solid ${FRAME_BORDER}`,
+        boxShadow: '0 2px 8px rgba(45,53,97,0.06)',
       }}
     >
-      <svg width={size * 0.55} height={size * 0.55} viewBox={`0 0 ${size * 0.55} ${size * 0.55}`}>
-        {renderMiniShape(shape.type, '#ffffff', size * 0.55)}
+      <svg width={inner} height={inner} viewBox={`0 0 ${inner} ${inner}`}>
+        {renderMiniShape(shape.type, fill, inner)}
       </svg>
     </div>
   );
 };
 
-export { GRADIENTS, colorValues };
+export { colorValues };

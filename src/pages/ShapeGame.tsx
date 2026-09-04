@@ -6,7 +6,7 @@ import { SoundToggle } from '@/components/SoundToggle';
 import { ParentSettings } from '@/components/ParentSettings';
 import { FeedbackDisplay } from '@/components/FeedbackDisplay';
 import { CountdownTimer } from '@/components/CountdownTimer';
-import { HeroShape, ShapeOptionCard } from '@/components/ShapeOptionCard';
+import { HeroShape, ShapeGrid, ShapeOptionCard } from '@/components/ShapeOptionCard';
 import { useShapeGameLogic } from '@/hooks/useShapeGameLogic';
 import { useSpeech } from '@/hooks/useSpeech';
 import { getAgeFromStorage, saveAgeToStorage } from '@/lib/ageUtils';
@@ -439,13 +439,13 @@ const ShapeGame: React.FC = () => {
             </div>
             <div className="flex justify-center gap-2 items-center mt-2">
               {currentChallenge.questionShape && (
-                <HeroShape shape={currentChallenge.questionShape} size={56} />
+                <HeroShape shape={currentChallenge.questionShape} size={64} />
               )}
               {speakButton}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5 flex-1 content-center min-h-0">
+          <ShapeGrid count={currentChallenge.options?.length ?? 0}>
             {currentChallenge.options?.map((option, index) => {
               const shape = option as Shape;
               if (!shape?.type || !shape?.color) return null;
@@ -463,7 +463,7 @@ const ShapeGame: React.FC = () => {
                 />
               );
             })}
-          </div>
+          </ShapeGrid>
         </div>
       );
     }
@@ -485,7 +485,7 @@ const ShapeGame: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5 flex-1 content-center min-h-0">
+          <ShapeGrid count={currentChallenge.shapes.length}>
             {currentChallenge.shapes.map((shape, index) => {
               const isSelected = selectedShapeIndices.includes(index);
               const isTarget = targetType ? shape.type === targetType : false;
@@ -504,7 +504,7 @@ const ShapeGame: React.FC = () => {
                 />
               );
             })}
-          </div>
+          </ShapeGrid>
         </div>
       );
     }
@@ -521,13 +521,13 @@ const ShapeGame: React.FC = () => {
             </div>
             <div className="flex justify-center gap-2 items-center mt-2">
               {currentChallenge.questionShape && (
-                <HeroShape shape={currentChallenge.questionShape} size={56} />
+                <HeroShape shape={currentChallenge.questionShape} size={64} />
               )}
               {speakButton}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5 flex-1 content-center min-h-0">
+          <ShapeGrid count={Math.min(4, currentChallenge.shapes.length)}>
             {currentChallenge.shapes.slice(0, 4).map((shape, index) => {
               const isSelected =
                 selectedAnswer !== null &&
@@ -547,7 +547,7 @@ const ShapeGame: React.FC = () => {
                 />
               );
             })}
-          </div>
+          </ShapeGrid>
         </div>
       );
     }
@@ -566,47 +566,47 @@ const ShapeGame: React.FC = () => {
         paddingRight: 12,
       }}
     >
-      <div className="max-w-[380px] mx-auto h-full flex flex-col min-h-0 gap-2">
+      <div className="max-w-[380px] mx-auto h-full flex flex-col min-h-0 gap-2.5">
         {/* Header */}
         <div className="shrink-0">
           <div className="flex items-center justify-between gap-2">
-            <div className="w-[96px] shrink-0" aria-hidden="true" />
+            <div className="w-[104px] shrink-0" aria-hidden="true" />
             <div className="flex-1 text-center min-w-0">
-              <div className="text-[26px] font-bold text-[#2D3561] leading-none">
+              <div className="text-[32px] font-bold text-[#2D3561] leading-none">
                 Form-Spaß
               </div>
-              <div className="text-[11px] text-[#666] font-medium mt-0.5">
+              <div className="text-[13px] text-[#666] font-medium mt-1">
                 Ab {childAge} Jahren{playerName ? ` · ${playerName}` : ''}
               </div>
             </div>
-            <div className="flex gap-1 shrink-0 w-[96px] justify-end">
+            <div className="flex gap-1.5 shrink-0 w-[104px] justify-end">
               <button
                 onClick={() => setShowResetDialog(true)}
-                className="bg-white/80 p-1.5 rounded-full shadow-sm hover:bg-white transition-all"
+                className="bg-white/80 p-2 rounded-full shadow-sm hover:bg-white transition-all"
                 title="Spiel zurücksetzen"
                 aria-label="Spiel zurücksetzen"
               >
-                <RotateCcw className="w-3.5 h-3.5 text-[#2D3561]" strokeWidth={2.25} />
+                <RotateCcw className="w-4 h-4 text-[#2D3561]" strokeWidth={2.25} />
               </button>
               <SoundToggle isMuted={isMuted} onToggle={toggleMute} />
               <button
                 onClick={() => setShowSettings(true)}
-                className="bg-white/80 p-1.5 rounded-full shadow-sm hover:bg-white transition-all"
+                className="bg-white/80 p-2 rounded-full shadow-sm hover:bg-white transition-all"
                 title="Einstellungen"
                 aria-label="Einstellungen"
               >
-                <Settings className="w-3.5 h-3.5 text-[#2D3561]" strokeWidth={2.25} />
+                <Settings className="w-4 h-4 text-[#2D3561]" strokeWidth={2.25} />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Compact progress */}
-        <div className="bg-white rounded-xl px-3 py-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.06)] shrink-0 flex items-center gap-2">
-          <div className="text-[10px] text-[#999] font-semibold uppercase tracking-wide whitespace-nowrap">
-            Lvl {levelInSet}/5
+        {/* Progress bar */}
+        <div className="bg-white rounded-xl px-3.5 py-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.06)] shrink-0 flex items-center gap-2.5">
+          <div className="text-[12px] text-[#999] font-semibold uppercase tracking-wide whitespace-nowrap">
+            Level {levelInSet}/5
           </div>
-          <div className="h-1.5 flex-1 bg-[#E8E8E8] rounded-full overflow-hidden">
+          <div className="h-2.5 flex-1 bg-[#E8E8E8] rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-300"
               style={{
@@ -615,12 +615,12 @@ const ShapeGame: React.FC = () => {
               }}
             />
           </div>
-          <div className="text-[10px] text-[#666] whitespace-nowrap">{encouragement}</div>
+          <div className="text-[12px] text-[#666] whitespace-nowrap">{encouragement}</div>
           {score > 0 && (
             <button
               type="button"
               onClick={() => handleLevelClick(Math.max(1, score))}
-              className="text-[10px] text-[#7C3AED] font-semibold whitespace-nowrap"
+              className="text-[12px] text-[#7C3AED] font-semibold whitespace-nowrap"
             >
               {score} Pkt
             </button>
